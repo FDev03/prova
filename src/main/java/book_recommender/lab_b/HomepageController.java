@@ -82,11 +82,11 @@ public class HomepageController implements Initializable {
         // Configura gli handler per l'evento keypress sui campi di ricerca
         setupEnterKeyHandlers();
 
-        // Carica 10 libri casuali nella homepage
+        // Carica i 3 libri più votati nella homepage
         try {
-            loadRandomBooks();
+            loadTopRatedBooks();
         } catch (Exception e) {
-            System.err.println("Errore durante il caricamento dei libri casuali: " + e.getMessage());
+            System.err.println("Errore durante il caricamento dei libri più votati: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -132,18 +132,39 @@ public class HomepageController implements Initializable {
     }
 
     /**
-     * Carica 10 libri casuali nella homepage
+     * Carica i 3 libri con la valutazione media più alta nella homepage
      */
-    private void loadRandomBooks() {
+    private void loadTopRatedBooks() {
         try {
-            // Ottieni 10 libri casuali
-            List<Book> randomBooks = BookService.getRandomBooks(10);
+            // Ottieni i 3 libri con la valutazione media più alta
+            List<Book> topRatedBooks = BookService.getTopRatedBooks(3);
 
             // Pulisci i contenitori
             clearBookContainers();
 
+            // Se non ci sono libri con valutazione positiva, non mostrare nulla
+            if (topRatedBooks.isEmpty()) {
+                // Aggiungi un messaggio nei contenitori per indicare che non ci sono libri con valutazioni
+                Label noRatingsLabel = new Label("Nessun libro con valutazioni disponibili.");
+                noRatingsLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #555555; -fx-padding: 20px;");
+
+                if (bookListContainer != null) {
+                    bookListContainer.getChildren().add(noRatingsLabel);
+                }
+
+                if (authorBookListContainer != null) {
+                    authorBookListContainer.getChildren().add(new Label("Nessun libro con valutazioni disponibili."));
+                }
+
+                if (authorYearBookListContainer != null) {
+                    authorYearBookListContainer.getChildren().add(new Label("Nessun libro con valutazioni disponibili."));
+                }
+
+                return;
+            }
+
             // Aggiungi i libri ai contenitori
-            for (Book book : randomBooks) {
+            for (Book book : topRatedBooks) {
                 // Aggiungi il libro alla pagina dei titoli
                 if (bookListContainer != null) {
                     addBookToContainer(book, bookListContainer);
@@ -159,7 +180,7 @@ public class HomepageController implements Initializable {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Errore nel caricamento dei libri casuali: " + e.getMessage());
+            System.err.println("Errore nel caricamento dei libri più votati: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -184,6 +205,14 @@ public class HomepageController implements Initializable {
     /**
      * Aggiunge un libro al contenitore specificato con tutte le informazioni
      */
+    /**
+     * Aggiunge un libro al contenitore specificato con tutte le informazioni
+     * Pulsante Visualizza posizionato completamente a destra
+     */
+    /**
+     * Aggiunge un libro al contenitore specificato con tutte le informazioni
+     * Pulsante Visualizza separato e posizionato a destra
+     */
     private void addBookToContainer(Book book, VBox container) {
         if (container == null) return;
 
@@ -193,41 +222,32 @@ public class HomepageController implements Initializable {
             bookCard.setStyle("-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-radius: 5px; -fx-padding: 15px;");
             bookCard.setPrefWidth(container.getWidth() - 30);
 
-            // Crea una HBox per il titolo e il pulsante "Visualizza"
-            HBox headerBox = new HBox();
-            headerBox.setAlignment(Pos.CENTER_LEFT);
+            // Crea un HBox principale che conterrà la colonna di informazioni e il pulsante
+            HBox mainBox = new HBox();
+            mainBox.setAlignment(Pos.CENTER_LEFT);
+            mainBox.setSpacing(15); // Spazio tra la colonna delle info e il pulsante
+
+            // Crea una VBox per titolo e informazioni libro (colonna di sinistra)
+            VBox infoColumn = new VBox(10);
+            HBox.setHgrow(infoColumn, Priority.ALWAYS); // Fai crescere la colonna delle info
 
             // Formatta il titolo del libro
             String originalTitle = book.getTitle();
             String formattedTitle;
 
-            // Calcola metà pagina (assumiamo che sia la metà della larghezza del container)
-            int maxLength = 40; // Puoi regolare questo valore in base alle tue esigenze
-
+            // Tronca il titolo se troppo lungo
+            int maxLength = 40;
             if (originalTitle.length() > maxLength) {
-                // Se il titolo è più lungo di metà pagina, tronca e aggiungi "..."
                 formattedTitle = originalTitle.substring(0, maxLength) + "...";
             } else {
-                // Se il titolo è più corto, aggiungi spazi fino a raggiungere metà pagina
-                StringBuilder sb = new StringBuilder(originalTitle);
-                while (sb.length() < maxLength) {
-                    sb.append(" ");
-                }
-                formattedTitle = sb.toString();
+                formattedTitle = originalTitle;
             }
 
             // Titolo del libro
             Label titleLabel = new Label(formattedTitle);
             titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #4054B2;");
             titleLabel.setUserData(originalTitle); // Salva il titolo originale come userData per uso futuro
-            HBox.setHgrow(titleLabel, Priority.ALWAYS);
-
-            // Pulsante "Visualizza" (modificato da "Aggiungi")
-            Button viewButton = new Button("Visualizza");
-            viewButton.setStyle("-fx-text-fill: white; -fx-background-color: #75B965; -fx-background-radius: 40px; -fx-padding: 8px 15px;");
-            viewButton.setOnAction(event -> visualizzalibro(event, originalTitle)); // Usa il titolo originale, non quello formattato
-
-            headerBox.getChildren().addAll(titleLabel, viewButton);
+            titleLabel.setWrapText(true);
 
             // Informazioni sul libro
             VBox infoBox = new VBox(5);
@@ -268,8 +288,26 @@ public class HomepageController implements Initializable {
             // Aggiungi tutte le informazioni al box delle info
             infoBox.getChildren().addAll(authorBox, categoryBox, publisherBox, yearBox);
 
-            // Aggiungi titolo e box delle info al contenitore del libro
-            bookCard.getChildren().addAll(headerBox, infoBox);
+            // Aggiungi titolo e info alla colonna di sinistra
+            infoColumn.getChildren().addAll(titleLabel, infoBox);
+
+            // Crea un VBox per allineare verticalmente il pulsante
+            VBox buttonColumn = new VBox();
+            buttonColumn.setAlignment(Pos.CENTER); // Allinea verticalmente al centro
+
+            // Pulsante "Visualizza"
+            Button viewButton = new Button("Visualizza");
+            viewButton.setStyle("-fx-text-fill: white; -fx-background-color: #75B965; -fx-background-radius: 40px; -fx-padding: 8px 15px;");
+            viewButton.setOnAction(event -> visualizzalibro(event, originalTitle));
+
+            // Aggiungi il pulsante alla colonna di destra
+            buttonColumn.getChildren().add(viewButton);
+
+            // Aggiungi le due colonne (info e pulsante) al box principale
+            mainBox.getChildren().addAll(infoColumn, buttonColumn);
+
+            // Aggiungi il box principale alla scheda del libro
+            bookCard.getChildren().add(mainBox);
 
             // Aggiungi la carta del libro al contenitore principale
             container.getChildren().add(bookCard);
@@ -283,11 +321,7 @@ public class HomepageController implements Initializable {
             errorLabel.setStyle("-fx-text-fill: red;");
             container.getChildren().add(errorLabel);
         }
-    }
-
-    // Il resto del codice rimane invariato...
-
-    /**
+    } /**
      * Gestisce il click sul pulsante "Login"
      * Naviga alla pagina di login
      */
@@ -425,8 +459,8 @@ public class HomepageController implements Initializable {
                     List<Book> results = BookService.searchBooksByTitle(searchTitle);
                     displaySearchResults(results, bookListContainer);
                 } else {
-                    // Se il campo di ricerca è vuoto, mostra libri casuali
-                    loadRandomBooks();
+                    // Se il campo di ricerca è vuoto, mostra i libri più votati
+                    loadTopRatedBooks();
                 }
             } else if (authorPage != null && authorPage.isVisible()) {
                 // Ricerca per autore
@@ -435,7 +469,7 @@ public class HomepageController implements Initializable {
                     List<Book> results = BookService.searchBooksByAuthor(searchAuthor);
                     displaySearchResults(results, authorBookListContainer);
                 } else {
-                    loadRandomBooks();
+                    loadTopRatedBooks();
                 }
             } else if (authorYearPage != null && authorYearPage.isVisible()) {
                 // Ricerca per autore e anno
@@ -451,7 +485,7 @@ public class HomepageController implements Initializable {
                         System.err.println("Formato dell'anno non valido: " + yearString);
                     }
                 } else {
-                    loadRandomBooks();
+                    loadTopRatedBooks();
                 }
             }
         } catch (Exception e) {

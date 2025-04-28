@@ -319,7 +319,6 @@ public class BookDetailsController implements Initializable {
                     Book book = new Book(fields);
 
                     // Confronto più flessibile per trovare titoli simili
-
                     if (book.getTitle().trim().equalsIgnoreCase(title.trim())) {
                         return book;
                     }
@@ -714,10 +713,7 @@ public class BookDetailsController implements Initializable {
                 String[] fields = BookService.parseCsvLine(line);
 
                 // Verifica che ci siano abbastanza campi e che il titolo corrisponda
-                if (fields.length >= 9 &&
-                        (fields[1].trim().equalsIgnoreCase(bookTitle.trim()) ||
-                                fields[1].trim().contains(bookTitle.trim()) ||
-                                bookTitle.trim().contains(fields[1].trim()))) {
+                if (fields.length >= 9 && fields[1].trim().equalsIgnoreCase(bookTitle.trim())) {
 
                     // Estrai ID utente e recensione generale
                     String userId = fields[0].trim();
@@ -735,14 +731,20 @@ public class BookDetailsController implements Initializable {
 
         return comments;
     }
+
+    /**
+     * Genera suggerimenti di libri simili basati sulla categoria del libro corrente.
+     */
     private void generateRecommendedBooks() {
-        // Prima cerca se esistono consigli personalizzati
         StringBuilder recommendations = new StringBuilder();
+
+        // Prima cerca se esistono consigli personalizzati nel file ConsigliLibri.dati.csv
         boolean foundCustomRecommendations = findCustomRecommendations(recommendations);
 
         // Se non sono stati trovati consigli personalizzati, genera consigli basati sulla categoria
         if (!foundCustomRecommendations) {
-            recommendations.append("Libri della stessa categoria:\n\n");
+            recommendations.append("Libri della stessa categoria: \n");
+
 
             // Ottieni alcuni libri casuali della stessa categoria
             boolean foundRecommendations = false;
@@ -755,19 +757,10 @@ public class BookDetailsController implements Initializable {
                 foundRecommendations = findSimilarBooks(recommendations, DATA_FILE_PATH);
             }
 
-            // Se sono state trovate raccomandazioni, imposta il testo del label
-            if (foundRecommendations) {
-                recommendedBooksLabel.setText(recommendations.toString());
-            } else {
-                recommendedBooksLabel.setText("Nessun libro simile trovato.");
-            }
         }
-        // Non serve l'else perché i consigli personalizzati gestiscono già la visualizzazione
-    }
-    /**
-     * Genera suggerimenti di libri simili basati sulla categoria del libro corrente.
-     */
 
+        recommendedBooksLabel.setText(recommendations.toString());
+    }
     /**
      * Cerca consigli personalizzati nel file ConsigliLibri.dati.csv
      * Anche un solo consiglio personalizzato impedirà la generazione di consigli automatici.
@@ -778,11 +771,15 @@ public class BookDetailsController implements Initializable {
     /**
      * Cerca consigli personalizzati nel file ConsigliLibri.dati.csv con debug migliorato
      */
+    /**
+     * Cerca consigli personalizzati nel file ConsigliLibri.dati.csv con corrispondenza esatta del titolo.
+     * Mostra solo i consigli per l'esatto stesso titolo, non per corrispondenze parziali.
+     *
+     * @param recommendations StringBuilder in cui aggiungere i consigli trovati
+     * @return true se è stato trovato anche un solo consiglio personalizzato, false altrimenti
+     */
     private boolean findCustomRecommendations(StringBuilder recommendations) {
-        // Rimuovere l'append di testo direttamente nel StringBuilder
-        // e creare invece una lista di consigli che verranno poi formattati come box
-        List<RecommendedBook> customRecommendations = new ArrayList<>();
-
+        int count = 0;
         try (BufferedReader reader = new BufferedReader(new FileReader(RECOMMENDATIONS_FILE_PATH))) {
             String line;
             String firstLine = reader.readLine();
@@ -790,22 +787,31 @@ public class BookDetailsController implements Initializable {
                 return false;
             }
 
-            // Leggi tutte le righe cercando corrispondenze con qualsiasi caso o formato
+            // Leggi tutte le righe cercando corrispondenze con il titolo esatto
             BufferedReader dataReader = new BufferedReader(new FileReader(RECOMMENDATIONS_FILE_PATH));
             while ((line = dataReader.readLine()) != null) {
                 String[] fields = BookService.parseCsvLine(line);
                 if (fields.length >= 2) {
-                    String sourceBookTitle = fields[1].trim().toLowerCase();
-                    String currentBookLower = currentBook.getTitle().trim().toLowerCase();
+                    String sourceBookTitle = fields[1].trim();
+                    String currentBookTitle = currentBook.getTitle().trim();
 
-                    // Confronta con una corrispondenza estremamente flessibile
-                    if (sourceBookTitle.equals(currentBookLower) ||
-                            sourceBookTitle.contains(currentBookLower) ||
-                            currentBookLower.contains(sourceBookTitle)) {
+                    // Confronta solo con corrispondenza esatta (case insensitive)
+                    if (sourceBookTitle.equalsIgnoreCase(currentBookTitle)) {
+                        if (count == 0) {
+                            recommendations.append("Libri consigliati specificamente per questo libro:\n\n");
+                        }
 
-                        String userId = fields.length >= 3 ? fields[0].trim() : "Utente anonimo";
-                        String bookTitle = fields[1].trim();
-                        customRecommendations.add(new RecommendedBook(userId, bookTitle));
+                        // Se il campo 2 (indice 2) è il libro consigliato
+                        if (fields.length >= 3) {
+                            recommendations.append("• \"").append(fields[2].trim()).append("\"");
+                            // Aggiungi il nome dell'utente che ha fatto la raccomandazione
+                            recommendations.append(" - Consigliato da: ").append(fields[0].trim());
+                        } else {
+                            // Nel caso in cui il formato del file sia diverso e non contenga il campo libro consigliato
+                            recommendations.append("• Consiglio da: ").append(fields[0].trim());
+                        }
+                        recommendations.append("\n");
+                        count++;
                     }
                 }
             }
@@ -815,58 +821,7 @@ public class BookDetailsController implements Initializable {
             e.printStackTrace();
         }
 
-        // Se ci sono consigli personalizzati, crea box visivi per ognuno
-        if (!customRecommendations.isEmpty()) {
-            VBox recommendationsContainer = new VBox(10);
-            recommendationsContainer.setPadding(new Insets(10));
-
-            Label headerLabel = new Label("Libri consigliati specificamente per questo libro:");
-            headerLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-            recommendationsContainer.getChildren().add(headerLabel);
-
-            for (RecommendedBook recommendation : customRecommendations) {
-                // Crea un box per ogni consiglio
-                VBox recommendationBox = new VBox(5);
-                recommendationBox.setPadding(new Insets(10));
-                recommendationBox.setStyle("-fx-background-color: #f8f8f8; -fx-border-color: #e0e0e0; -fx-border-radius: 5px;");
-
-                // Usa il colore assegnato all'utente
-                String userColor = userColors.getOrDefault(recommendation.userId, "#333333");
-
-                Label userLabel = new Label(recommendation.userId);
-                userLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: " + userColor + ";");
-
-                Label bookLabel = new Label("\"" + recommendation.bookTitle + "\"");
-                bookLabel.setWrapText(true);
-
-                recommendationBox.getChildren().addAll(userLabel, bookLabel);
-                recommendationsContainer.getChildren().add(recommendationBox);
-            }
-
-            // Sostituisci l'etichetta delle raccomandazioni con il container
-            if (recommendedBooksLabel.getParent() instanceof VBox) {
-                VBox parent = (VBox) recommendedBooksLabel.getParent();
-                int index = parent.getChildren().indexOf(recommendedBooksLabel);
-                if (index >= 0) {
-                    parent.getChildren().set(index, recommendationsContainer);
-                }
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    // Classe ausiliaria per memorizzare i consigli personalizzati
-    private class RecommendedBook {
-        public String userId;
-        public String bookTitle;
-
-        public RecommendedBook(String userId, String bookTitle) {
-            this.userId = userId;
-            this.bookTitle = bookTitle;
-        }
+        return count > 0;
     }
 
     /**
@@ -891,10 +846,9 @@ public class BookDetailsController implements Initializable {
                     if (book.getCategory().equalsIgnoreCase(currentBook.getCategory()) &&
                             !book.getTitle().equalsIgnoreCase(currentBook.getTitle())) {
 
-                        // Formato semplificato: solo titolo e autore
                         recommendations.append("• \"")
                                 .append(book.getTitle())
-                                .append("\" - ")
+                                .append("\" di ")
                                 .append(book.getAuthors())
                                 .append("\n");
                         count++;

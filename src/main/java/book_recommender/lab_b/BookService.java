@@ -83,6 +83,145 @@ public class BookService {
     }
 
     /**
+     * Ottiene una lista dei libri con la valutazione media più alta.
+     * Include solo libri con valutazione media totale > 0.
+     *
+     * @param limit il numero massimo di libri da ritornare
+     * @return lista dei libri con la valutazione media totale più alta
+     */
+    public static List<Book> getTopRatedBooks(int limit) {
+        // Assicurati che i libri siano caricati
+        if (!booksLoaded && !loadBooks()) {
+            return new ArrayList<>(); // Restituisci una lista vuota in caso di errore
+        }
+
+        // Percorso al file delle valutazioni dei libri
+        final String RATINGS_FILE_PATH = "data/ValutazioniLibri.csv";
+
+        // Mappa per memorizzare le valutazioni medie totali dei libri
+        java.util.Map<String, Double> bookRatings = new java.util.HashMap<>();
+
+        // Mappa per contare il numero di valutazioni per libro
+        java.util.Map<String, Integer> ratingCounts = new java.util.HashMap<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(RATINGS_FILE_PATH))) {
+            String line;
+            // Salta l'intestazione
+            reader.readLine();
+
+            while ((line = reader.readLine()) != null) {
+                String[] fields = parseCsvLine(line);
+
+                // Verifica che ci siano tutti i campi necessari per le valutazioni
+                if (fields.length >= 7) {
+                    String bookTitle = fields[1].trim();
+
+                    try {
+                        // Estrai le 5 valutazioni
+                        double styleRating = Double.parseDouble(fields[2].trim());
+                        double contentRating = Double.parseDouble(fields[3].trim());
+                        double pleasantnessRating = Double.parseDouble(fields[4].trim());
+                        double originalityRating = Double.parseDouble(fields[5].trim());
+                        double editionRating = Double.parseDouble(fields[6].trim());
+
+                        // Calcola la media totale per questa valutazione
+                        double avgRating = (styleRating + contentRating + pleasantnessRating +
+                                originalityRating + editionRating) / 5.0;
+
+                        // Aggiorna la somma delle valutazioni
+                        if (!bookRatings.containsKey(bookTitle)) {
+                            bookRatings.put(bookTitle, avgRating);
+                            ratingCounts.put(bookTitle, 1);
+                        } else {
+                            double currentSum = bookRatings.get(bookTitle) * ratingCounts.get(bookTitle);
+                            int currentCount = ratingCounts.get(bookTitle);
+
+                            currentSum += avgRating;
+                            currentCount++;
+
+                            // Aggiorna con la nuova media
+                            bookRatings.put(bookTitle, currentSum / currentCount);
+                            ratingCounts.put(bookTitle, currentCount);
+                        }
+                    } catch (NumberFormatException e) {
+                        System.err.println("Errore nel formato delle valutazioni per il libro: " + bookTitle);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Errore nella lettura del file delle valutazioni: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>(); // Restituisci una lista vuota in caso di errore
+        }
+
+        // Filtra i libri con valutazione media totale > 0
+        java.util.Map<String, Double> positiveRatings = new java.util.HashMap<>();
+        for (java.util.Map.Entry<String, Double> entry : bookRatings.entrySet()) {
+            if (entry.getValue() > 0) {
+                // Arrotonda a 1 decimale
+                double roundedRating = Math.round(entry.getValue() * 10) / 10.0;
+                positiveRatings.put(entry.getKey(), roundedRating);
+            }
+        }
+
+        // Se non ci sono libri con valutazione positiva, restituisci una lista vuota
+        if (positiveRatings.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Ottiene i libri corrispondenti alle valutazioni positive
+        List<Book> topRatedBooks = new ArrayList<>();
+
+        // Classe interna per abbinare un libro con la sua valutazione
+        class BookWithRating implements Comparable<BookWithRating> {
+            Book book;
+            double rating;
+
+            public BookWithRating(Book book, double rating) {
+                this.book = book;
+                this.rating = rating;
+            }
+
+            @Override
+            public int compareTo(BookWithRating other) {
+                // Ordine decrescente basato sul rating
+                return Double.compare(other.rating, this.rating);
+            }
+        }
+
+        List<BookWithRating> booksWithRatings = new ArrayList<>();
+
+        // Trova i libri corrispondenti
+        for (Book book : allBooks) {
+            String bookTitle = book.getTitle().trim();
+
+            // Cerca una corrispondenza esatta o parziale
+            for (java.util.Map.Entry<String, Double> entry : positiveRatings.entrySet()) {
+                String ratedTitle = entry.getKey();
+
+                // Confronto flessibile per gestire differenze minori nei titoli
+                if (bookTitle.equalsIgnoreCase(ratedTitle) ||
+                        bookTitle.contains(ratedTitle) ||
+                        ratedTitle.contains(bookTitle)) {
+
+                    booksWithRatings.add(new BookWithRating(book, entry.getValue()));
+                    break;
+                }
+            }
+        }
+
+        // Ordina in base alla valutazione (ordine decrescente)
+        Collections.sort(booksWithRatings);
+
+        // Prendi al massimo 'limit' libri
+        for (int i = 0; i < Math.min(limit, booksWithRatings.size()); i++) {
+            topRatedBooks.add(booksWithRatings.get(i).book);
+        }
+
+        return topRatedBooks;
+    }
+
+    /**
      * Cerca libri per titolo.
      *
      * @param title Il titolo da cercare
@@ -182,4 +321,5 @@ public class BookService {
         fields.add(currentField.toString());
 
         return fields.toArray(new String[0]);
-    }}
+    }
+}
