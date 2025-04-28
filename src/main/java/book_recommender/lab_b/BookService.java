@@ -56,6 +56,7 @@ public class BookService {
         }
     }
 
+
     /**
      * Ottiene una lista di libri casuali.
      *
