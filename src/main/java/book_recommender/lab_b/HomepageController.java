@@ -130,22 +130,45 @@ public class HomepageController implements Initializable {
             });
         }
     }
-
     /**
-     * Carica i 3 libri con la valutazione media più alta nella homepage
+     * Carica i libri con la valutazione media più alta nella homepage.
+     * Include solo libri con voto medio > 0.
      */
     private void loadTopRatedBooks() {
         try {
-            // Ottieni i 3 libri con la valutazione media più alta
-            List<Book> topRatedBooks = BookService.getTopRatedBooks(3);
+            // Ottieni i libri con valutazione media > 0, senza limiti sul numero
+            List<Book> topRatedBooks = BookService.getTopRatedBooksWithPositiveRating();
 
             // Pulisci i contenitori
             clearBookContainers();
 
-            // Se non ci sono libri con valutazione positiva, non mostrare nulla
+            // Aggiungi l'intestazione "Top 3 libri per valutazione" a tutti i contenitori
+            Label titleHeader = new Label("Top 3 libri per valutazione: ");
+
+            titleHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
+
+           Label authorHeader = new Label("Top 3 libri per valutazione: ");
+            authorHeader.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #4054B2; -fx-padding: 10px 0 15px 0;");
+
+            Label authorYearHeader = new Label("Top 3 libri per valutazione: ");
+            authorYearHeader.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #4054B2; -fx-padding: 10px 0 15px 0;");
+
+            if (bookListContainer != null) {
+                bookListContainer.getChildren().add(titleHeader);
+            }
+
+            if (authorBookListContainer != null) {
+                authorBookListContainer.getChildren().add(authorHeader);
+            }
+
+            if (authorYearBookListContainer != null) {
+                authorYearBookListContainer.getChildren().add(authorYearHeader);
+            }
+
+            // Se non ci sono libri con valutazione positiva, mostra un messaggio
             if (topRatedBooks.isEmpty()) {
                 // Aggiungi un messaggio nei contenitori per indicare che non ci sono libri con valutazioni
-                Label noRatingsLabel = new Label("Nessun libro con valutazioni disponibili.");
+                Label noRatingsLabel = new Label("Nessun libro con valutazioni positive disponibili.");
                 noRatingsLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #555555; -fx-padding: 20px;");
 
                 if (bookListContainer != null) {
@@ -153,18 +176,22 @@ public class HomepageController implements Initializable {
                 }
 
                 if (authorBookListContainer != null) {
-                    authorBookListContainer.getChildren().add(new Label("Nessun libro con valutazioni disponibili."));
+                    authorBookListContainer.getChildren().add(new Label("Nessun libro con valutazioni positive disponibili."));
                 }
 
                 if (authorYearBookListContainer != null) {
-                    authorYearBookListContainer.getChildren().add(new Label("Nessun libro con valutazioni disponibili."));
+                    authorYearBookListContainer.getChildren().add(new Label("Nessun libro con valutazioni positive disponibili."));
                 }
 
                 return;
             }
 
+            // Prendi al massimo i primi 3 libri (o meno se non ce ne sono abbastanza)
+            int booksToShow = Math.min(3, topRatedBooks.size());
+            List<Book> top3Books = topRatedBooks.subList(0, booksToShow);
+
             // Aggiungi i libri ai contenitori
-            for (Book book : topRatedBooks) {
+            for (Book book : top3Books) {
                 // Aggiungi il libro alla pagina dei titoli
                 if (bookListContainer != null) {
                     addBookToContainer(book, bookListContainer);
@@ -493,7 +520,6 @@ public class HomepageController implements Initializable {
             e.printStackTrace();
         }
     }
-
     /**
      * Mostra i risultati della ricerca nel contenitore specificato
      */
@@ -510,6 +536,11 @@ public class HomepageController implements Initializable {
                 noResultsLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #555555; -fx-padding: 20px;");
                 container.getChildren().add(noResultsLabel);
             } else {
+                // Se ci sono risultati, aggiungi l'intestazione "Risultati della ricerca"
+                Label searchResultsHeader = new Label("Risultati della ricerca: ");
+                searchResultsHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
+                container.getChildren().add(searchResultsHeader);
+
                 // Aggiungi i libri al contenitore
                 for (Book book : books) {
                     addBookToContainer(book, container);
@@ -520,7 +551,6 @@ public class HomepageController implements Initializable {
             e.printStackTrace();
         }
     }
-
     /**
      * Gestisce la visualizzazione dei dettagli del libro
      * Ora modificato per navigare alla pagina di dettaglio del libro
