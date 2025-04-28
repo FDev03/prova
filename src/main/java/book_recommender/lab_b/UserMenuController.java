@@ -39,8 +39,8 @@ public class UserMenuController {
      */
     public void setUserData(String userId) {
         this.userId = userId;
-        welcomeLabel.setText("Ciao, " + userId);
-        System.out.println("Dati utente impostati per: " + userId);
+        welcomeLabel.setText("Ciao, " + userId + "!");
+
     }
 
     /**
@@ -113,8 +113,7 @@ public class UserMenuController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
 
             // Debug: stampa i dettagli del percorso
-            System.out.println("Tentativo di caricare: " + fxmlFile);
-            System.out.println("URL risolto: " + getClass().getResource(fxmlFile));
+
 
             if (getClass().getResource(fxmlFile) == null) {
                 throw new IOException("File FXML non trovato: " + fxmlFile);
@@ -151,9 +150,7 @@ public class UserMenuController {
             String fxmlFile = "/book_recommender/lab_b/selezionalib.fxml";
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
 
-            // Debug: stampa i dettagli del percorso
-            System.out.println("Tentativo di caricare: " + fxmlFile);
-            System.out.println("URL risolto: " + getClass().getResource(fxmlFile));
+
 
             if (getClass().getResource(fxmlFile) == null) {
                 throw new IOException("File FXML non trovato: " + fxmlFile);
@@ -190,9 +187,7 @@ public class UserMenuController {
             String fxmlFile = "/book_recommender/lab_b/selezionalib.fxml";
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
 
-            // Debug: stampa i dettagli del percorso
-            System.out.println("Tentativo di caricare: " + fxmlFile);
-            System.out.println("URL risolto: " + getClass().getResource(fxmlFile));
+
 
             if (getClass().getResource(fxmlFile) == null) {
                 throw new IOException("File FXML non trovato: " + fxmlFile);

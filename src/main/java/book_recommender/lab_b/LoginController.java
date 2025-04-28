@@ -13,7 +13,10 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 public class LoginController {
 
@@ -25,6 +28,9 @@ public class LoginController {
 
     @FXML
     private Label errorMessage;
+
+    // Percorso relativo al file CSV degli utenti
+    private final String USERS_FILE_PATH = "data/UtentiRegistrati.csv";
 
     /**
      * Gestisce l'evento di pressione tasto nella finestra di login
@@ -56,17 +62,34 @@ public class LoginController {
         }
     }
 
-    // Metodo per verificare le credenziali
+    // Metodo per verificare le credenziali usando il file CSV
     private boolean isValidLogin(String userId, String password) {
-        // Credenziali valide per il test
-        final String VALID_USER_ID = "admin";
-        final String VALID_PASSWORD = "password123";
+        try (BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE_PATH))) {
+            String line;
+            // Salta l'intestazione (prima riga)
+            reader.readLine();
 
-        // Verifica se le credenziali corrispondono
-        return userId.equals(VALID_USER_ID) && password.equals(VALID_PASSWORD);
+            while ((line = reader.readLine()) != null) {
+                String[] fields = line.split(",");
 
-        // Nota: in una applicazione reale, dovresti verificare le credenziali
-        // in un database o file, e la password dovrebbe essere criptata
+                // Verifica che l'array abbia almeno 5 elementi
+                if (fields.length >= 5) {
+                    // Nome e Cognome,Codice Fiscale,Email,UserID,Password
+                    String storedUserId = fields[3].trim();
+                    String storedPassword = fields[4].trim();
+
+                    if (userId.equals(storedUserId) && password.equals(storedPassword)) {
+
+                        return true;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Errore nella lettura del file degli utenti: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // Metodo per navigare al menu utente
@@ -77,8 +100,7 @@ public class LoginController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
 
             // Debug: stampa i dettagli del percorso
-            System.out.println("Tentativo di caricare: " + fxmlFile);
-            System.out.println("URL risolto: " + getClass().getResource(fxmlFile));
+
 
             if (getClass().getResource(fxmlFile) == null) {
                 throw new IOException("File FXML non trovato: " + fxmlFile);

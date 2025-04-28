@@ -50,7 +50,7 @@ public class CreateLibraryController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         // Inizializzazione del controller
-        System.out.println("CreateLibraryController inizializzato");
+
     }
 
     /**
@@ -61,7 +61,7 @@ public class CreateLibraryController implements Initializable {
     public void setUserId(String userId) {
         this.userId = userId;
         userIdLabel.setText(userId);
-        System.out.println("UserId impostato a: " + userId);
+
     }
 
     /**
@@ -80,8 +80,6 @@ public class CreateLibraryController implements Initializable {
         // Nascondi eventuali messaggi di errore precedenti
         errorLabel.setVisible(false);
 
-        // Qui andrebbe la logica per creare la libreria nel database/file
-        System.out.println("Creazione libreria: " + libraryName + " per l'utente: " + userId);
 
         try {
             // Dopo aver creato la libreria, passa alla pagina di aggiunta libri
