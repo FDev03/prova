@@ -145,7 +145,7 @@ public class HomepageController implements Initializable {
             // Aggiungi l'intestazione "Top 3 libri per valutazione" a tutti i contenitori
             Label titleHeader = new Label("Top 3 libri per valutazione: ");
 
-            titleHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
+            titleHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
 
            Label authorHeader = new Label("Top 3 libri per valutazione: ");
             authorHeader.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #4054B2; -fx-padding: 10px 0 15px 0;");
@@ -538,7 +538,7 @@ public class HomepageController implements Initializable {
             } else {
                 // Se ci sono risultati, aggiungi l'intestazione "Risultati della ricerca"
                 Label searchResultsHeader = new Label("Risultati della ricerca: ");
-                searchResultsHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
+                searchResultsHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
                 container.getChildren().add(searchResultsHeader);
 
                 // Aggiungi i libri al contenitore
