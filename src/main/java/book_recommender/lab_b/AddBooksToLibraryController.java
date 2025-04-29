@@ -638,7 +638,7 @@ public class AddBooksToLibraryController implements Initializable {
 
         if (isSelected) {
             actionButton.setText("Rimuovi");
-            actionButton.setStyle("-fx-background-color: #E5585D; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
+            actionButton.setStyle("-fx-background-color: red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
         } else {
             actionButton.setText("Aggiungi");
             actionButton.setStyle("-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
@@ -670,7 +670,7 @@ public class AddBooksToLibraryController implements Initializable {
             // Aggiungi il libro alla selezione
             selectedBooks.add(bookTitle);
             button.setText("Rimuovi");
-            button.setStyle("-fx-background-color: #E5585D; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
+            button.setStyle("-fx-background-color: red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
         }
 
         // Aggiorna la lista dei libri selezionati

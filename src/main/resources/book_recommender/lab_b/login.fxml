@@ -84,7 +84,7 @@
                         <Label fx:id="errorMessage"
                                text="ID o password errata. Riprova."
                                visible="false"
-                               style="-fx-text-fill: #E5585D;">
+                               style="-fx-text-fill: red;">
                            <VBox.margin>
                               <Insets top="5.0" />
                            </VBox.margin>

@@ -54,7 +54,7 @@
                         <Insets />
                      </VBox.margin>
                   </Label>
-                  <Label fx:id="errorLabel" style="-fx-font-size: 16px; -fx-text-fill: #E5585D;" text="Il nome della libreria non può essere vuoto." visible="false" />
+                  <Label fx:id="errorLabel" style="-fx-font-size: 16px; -fx-text-fill: red;" text="Il nome della libreria non può essere vuoto." visible="false" />
                   <HBox alignment="CENTER" spacing="30.0">
                      <children>
                         <Button fx:id="createButton" mnemonicParsing="false" onAction="#handleCreate" prefHeight="50.0" prefWidth="250.0" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 16px; -fx-background-radius: 40px; -fx-padding: 10px 20px" text="Crea e aggiungi libri" />

@@ -26,7 +26,7 @@
                               <Insets right="15.0" />
                            </HBox.margin>
                         </Label>
-                        <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color: #E5585D; -fx-text-fill: white; -fx-background-radius: 40px; -fx-padding: 10px 20px;" text="Torna al menu" />
+                        <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color: red; -fx-text-fill: white; -fx-background-radius: 40px; -fx-padding: 10px 20px;" text="Torna al menu" />
                      </children>
                   </HBox>
                </children>
@@ -316,7 +316,7 @@
                         </VBox>
                         
                         <!-- Validazione errori -->
-                        <Label fx:id="errorLabel" style="-fx-text-fill: #E5585D; -fx-font-size: 14px;" text="Errore: Devi assegnare un voto a tutte le caratteristiche prima di inviare." visible="false">
+                        <Label fx:id="errorLabel" style="-fx-text-fill: red; -fx-font-size: 14px;" text="Errore: Devi assegnare un voto a tutte le caratteristiche prima di inviare." visible="false">
                            <VBox.margin>
                               <Insets top="10.0" />
                            </VBox.margin>
