@@ -42,7 +42,6 @@ public class AddBooksToLibraryController implements Initializable {
     @FXML private Button titleSearchButton;
     @FXML private Button authorSearchButton;
     @FXML private Button authorYearSearchButton;
-    @FXML private Button removeSelectedButton;
     @FXML private Button clearAllButton;
     @FXML private Button saveButton;
     @FXML private Button cancelButton;
@@ -82,13 +81,21 @@ public class AddBooksToLibraryController implements Initializable {
         // Configura la ListView con i libri selezionati
         setupSelectedBooksListView();
 
-        // Imposta lo stato iniziale dei pulsanti
-        updateButtonStates();
+        // Il bottone saveButton è sempre attivo
+        saveButton.setDisable(false);
+
+        // Aggiorna lo stato del bottone clearAllButton
+        updateClearAllButtonState();
     }
 
     /**
-     * Configura la ListView per i libri selezionati.
+     * Aggiorna lo stato del pulsante ClearAll in base alla presenza di libri selezionati.
      */
+    private void updateClearAllButtonState() {
+        boolean hasSelectedBooks = !selectedBooks.isEmpty();
+        clearAllButton.setDisable(!hasSelectedBooks);
+    }
+
     /**
      * Configura la ListView per i libri selezionati.
      */
@@ -97,7 +104,7 @@ public class AddBooksToLibraryController implements Initializable {
 
         // Aggiungi un listener per aggiornare lo stato dei pulsanti quando cambia la selezione
         selectedBooksListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            updateButtonStates();
+            updateClearAllButtonState();
         });
 
         // Modifica la visualizzazione delle celle per mostrare meglio i titoli dei libri
@@ -126,7 +133,7 @@ public class AddBooksToLibraryController implements Initializable {
                             Button deleteButton = new Button("❌");
                             deleteButton.setStyle(
                                     "-fx-background-color: transparent; " +  // Sfondo trasparente
-                                            "-fx-text-fill: #FF0000; " +             // Testo (❌) rosso
+                                            "-fx-text-fill: #FF0000; " +     // Testo (❌) rosso
                                             "-fx-font-weight: bold; " +
                                             "-fx-cursor: hand;"
                             );
@@ -134,7 +141,7 @@ public class AddBooksToLibraryController implements Initializable {
                                 selectedBooks.remove(item);
                                 updateSelectedBooksList();
                                 updateSelectedBooksCount();
-                                updateButtonStates();
+                                updateClearAllButtonState();
                                 updateSearchResults();
                             });
 
@@ -172,7 +179,7 @@ public class AddBooksToLibraryController implements Initializable {
         updateSelectedBooksCount();
 
         // Aggiorna lo stato dei pulsanti
-        updateButtonStates();
+        updateClearAllButtonState();
 
         // Aggiorna i pulsanti nei risultati di ricerca
         updateSearchResults();
@@ -189,7 +196,7 @@ public class AddBooksToLibraryController implements Initializable {
             Alert alert = new Alert(AlertType.WARNING);
             alert.setTitle("Conferma cancellazione");
             alert.setHeaderText("Attenzione");
-            alert.setContentText("Non ci sono libri selezionati. La libreria verrà eliminata. Tutti i dati correlati (valutazioni, voti, consigli) saranno rimossi. Vuoi procedere?");
+            alert.setContentText("Non ci sono libri selezionati. La libreria verrà eliminata. Vuoi procedere?");
 
             ButtonType buttonTypeYes = new ButtonType("Sì");
             ButtonType buttonTypeNo = new ButtonType("No");
@@ -214,8 +221,7 @@ public class AddBooksToLibraryController implements Initializable {
         saveLibraryToFile();
 
         // Torna al menu utente con un messaggio di successo
-        navigateToUserMenuWithMessage(event, "Libreria '" + libraryName + "' aggiornata con successo!");
-    }
+        navigateToUserMenuWithMessage(event, "");  }
 
     /**
      * Elimina la libreria e tutti i dati correlati (valutazioni, voti, consigli).
@@ -316,7 +322,7 @@ public class AddBooksToLibraryController implements Initializable {
      * Elimina i voti dell'utente per la libreria da libri.csv.
      */
     private void deleteUserVotesForLibrary() throws IOException {
-        final String BOOKS_FILE_PATH = "data/Libri.csv";
+        final String BOOKS_FILE_PATH = "data/Data.csv";
         List<String> allLines = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(BOOKS_FILE_PATH))) {
@@ -679,8 +685,8 @@ public class AddBooksToLibraryController implements Initializable {
         // Aggiorna il contatore dei libri selezionati
         updateSelectedBooksCount();
 
-        // Aggiorna lo stato dei pulsanti
-        updateButtonStates();
+        // Aggiorna lo stato del pulsante ClearAll
+        updateClearAllButtonState();
 
         // Nascondi eventuali messaggi di errore
         errorLabel.setVisible(false);
@@ -704,19 +710,6 @@ public class AddBooksToLibraryController implements Initializable {
      */
     private void updateSelectedBooksCount() {
         selectedBooksCountLabel.setText("Libri totali: " + selectedBooks.size());
-    }
-
-    /**
-     * Aggiorna lo stato dei pulsanti in base alla selezione corrente.
-     */
-    private void updateButtonStates() {
-        boolean hasSelectedBooks = !selectedBooks.isEmpty();
-        boolean hasSelectedItems = !selectedBooksListView.getSelectionModel().getSelectedItems().isEmpty();
-
-        // Abilita/disabilita i pulsanti
-        removeSelectedButton.setDisable(!hasSelectedItems);
-        clearAllButton.setDisable(!hasSelectedBooks);
-        saveButton.setDisable(!hasSelectedBooks);
     }
 
     /**
@@ -760,12 +753,11 @@ public class AddBooksToLibraryController implements Initializable {
         updateSelectedBooksCount();
 
         // Aggiorna lo stato dei pulsanti
-        updateButtonStates();
+        updateClearAllButtonState();
 
         // Aggiorna i pulsanti nei risultati di ricerca
         updateSearchResults();
     }
-
 
     /**
      * Salva la libreria con i libri selezionati nel file CSV.
@@ -890,5 +882,4 @@ public class AddBooksToLibraryController implements Initializable {
             errorLabel.setText("Errore: " + e.getMessage());
             errorLabel.setVisible(true);
         }
-    }
-}
+    }}

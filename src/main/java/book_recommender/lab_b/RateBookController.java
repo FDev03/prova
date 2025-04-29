@@ -487,7 +487,6 @@ public class RateBookController implements Initializable {
             // Passa l'ID utente al controller del menu utente
             UserMenuController controller = loader.getController();
             controller.setUserData(userId);
-            controller.setStatusMessage("Valutazione inviata con successo!");
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);

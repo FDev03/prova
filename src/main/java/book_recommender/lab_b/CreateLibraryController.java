@@ -50,7 +50,6 @@ public class CreateLibraryController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         // Inizializzazione del controller
-
     }
 
     /**
@@ -61,7 +60,6 @@ public class CreateLibraryController implements Initializable {
     public void setUserId(String userId) {
         this.userId = userId;
         userIdLabel.setText(userId);
-
     }
 
     /**
@@ -80,23 +78,18 @@ public class CreateLibraryController implements Initializable {
         // Nascondi eventuali messaggi di errore precedenti
         errorLabel.setVisible(false);
 
-
         try {
-            // Dopo aver creato la libreria, passa alla pagina di aggiunta libri
-            // o potrebbe essere la stessa schermata di ricerca ma con un flag che indica
-            // che si sta aggiungendo a una libreria specifica
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/homepage.fxml"));
+            // Carica la pagina di aggiunta libri alla libreria
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/aggiungilibro.fxml"));
             Parent root = loader.load();
 
-            // Potresti voler passare il nome della libreria e l'ID utente al controller di ricerca/aggiunta libri
-            // SearchBooksController controller = loader.getController();
-            // controller.setLibraryInfo(userId, libraryName);
+            // Passa il nome della libreria e l'ID utente al controller di aggiunta libri
+            AddBooksToLibraryController controller = loader.getController();
+            controller.setData(userId, libraryName);
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-
             stage.show();
 
         } catch (IOException e) {

@@ -260,13 +260,9 @@
                                             </VBox.margin>
                                         </Label>
                                         <ListView fx:id="selectedBooksListView" prefHeight="420.0" prefWidth="330.0" style="-fx-background-radius: 5;" VBox.vgrow="ALWAYS" />
+                                        <!-- Bottone Cancella Tutti centrato -->
                                         <HBox alignment="CENTER" spacing="10.0">
                                             <children>
-                                                <Button fx:id="removeSelectedButton" mnemonicParsing="false" onAction="#handleRemoveSelected" prefHeight="40.0" prefWidth="160.0" style="-fx-background-color: red; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Rimuovi">
-                                                    <effect>
-                                                        <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
-                                                    </effect>
-                                                </Button>
                                                 <Button fx:id="clearAllButton" mnemonicParsing="false" onAction="#handleClearAll" prefHeight="40.0" prefWidth="160.0" style="-fx-background-color: #9E9E9E; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Cancella Tutti">
                                                     <effect>
                                                         <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
