@@ -28,7 +28,7 @@
                                         <Insets right="15.0" />
                                     </HBox.margin>
                                 </Label>
-                                <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color: #E5585D; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Torna al menu">
+                                <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color: red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Torna al menu">
                                     <effect>
                                         <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
                                     </effect>

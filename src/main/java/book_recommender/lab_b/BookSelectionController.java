@@ -193,6 +193,7 @@ public class BookSelectionController {
      * Gestisce il click sul pulsante "Seleziona".
      * Seleziona il libro scelto e procede all'operazione successiva.
      */
+
     @FXML
     public void handleSelect(ActionEvent event) {
         String selectedBook = booksListView.getSelectionModel().getSelectedItem();
@@ -212,11 +213,8 @@ public class BookSelectionController {
             // Naviga alla pagina di valutazione del libro
             navigateToRateBook(event, selectedBook);
         } else if ("recommend".equals(operationType)) {
-            // Naviga alla pagina di consiglio del libro (non implementata in questo esempio)
-            // navigateToRecommendBook(event, selectedBook);
-            errorLabel.setText("Funzionalità di consiglio non ancora implementata.");
-            errorLabel.setStyle("-fx-text-fill: #E5585D;"); // Rosso per l'errore
-            errorLabel.setVisible(true);
+            // Naviga alla pagina di consiglio del libro
+            navigateToRecommendBook(event, selectedBook);
         } else {
             // Operazione generica di selezione
             errorLabel.setText("Libro '" + selectedBook + "' selezionato con successo!");
@@ -225,6 +223,37 @@ public class BookSelectionController {
         }
     }
 
+
+
+
+
+    /**
+     * Naviga alla pagina di consiglio del libro.
+     */
+    private void navigateToRecommendBook(ActionEvent event, String bookTitle) {
+        try {
+            // Carica la pagina di consiglio del libro
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/consigli.fxml"));
+            Parent root = loader.load();
+
+            // Ottieni il controller e passa i dati necessari
+            RecommendBookController controller = loader.getController();
+            controller.setData(userId, bookTitle, libraryName);
+
+            // Imposta la nuova scena
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("Errore nel caricamento della pagina di consiglio libro: " + e.getMessage());
+            e.printStackTrace();
+            errorLabel.setText("Errore: " + e.getMessage());
+            errorLabel.setVisible(true);
+        }
+    }
     /**
      * Naviga alla pagina di valutazione del libro.
      * PERCORSO CORRETTO PER VALUTAZIONE.FXML
