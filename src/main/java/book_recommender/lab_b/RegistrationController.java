@@ -196,7 +196,7 @@ public class RegistrationController {
             // Imposta la nuova scena
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender");
+
             stage.show();
 
         } catch (IOException e) {
@@ -234,7 +234,6 @@ public class RegistrationController {
             // Imposta la nuova scena
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Menu Utente");
             stage.show();
 
         } catch (IOException e) {

@@ -118,7 +118,6 @@ public class LoginController {
             // Imposta la nuova scena mantenendo le dimensioni
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Menu Utente");
             stage.show();
 
         } catch (IOException e) {
@@ -153,7 +152,7 @@ public class LoginController {
             // Imposta la nuova scena
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender");
+
             stage.show();
 
         } catch (IOException e) {

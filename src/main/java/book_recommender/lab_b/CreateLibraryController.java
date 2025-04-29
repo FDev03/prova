@@ -96,7 +96,7 @@ public class CreateLibraryController implements Initializable {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Aggiungi Libri");
+
             stage.show();
 
         } catch (IOException e) {
@@ -126,7 +126,7 @@ public class CreateLibraryController implements Initializable {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Menu Utente");
+
             stage.show();
 
         } catch (IOException e) {
@@ -152,7 +152,7 @@ public class CreateLibraryController implements Initializable {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender");
+
             stage.show();
 
         } catch (IOException e) {

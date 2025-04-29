@@ -16,7 +16,6 @@ import javafx.stage.Stage;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +27,8 @@ public class LibrarySelectionController {
 
     @FXML
     private Label userIdLabel;
+
+
 
     @FXML
     private ListView<String> librariesListView;
@@ -49,6 +50,9 @@ public class LibrarySelectionController {
 
     private String userId;
     private List<String> libraries = new ArrayList<>();
+
+    // Variabile per tracciare il tipo di operazione (select, rate, recommend, add)
+    private String operationType = "select"; // Default è la selezione generica
 
     /**
      * Inizializza il controller.
@@ -103,6 +107,31 @@ public class LibrarySelectionController {
     }
 
     /**
+     * Imposta i dati dell'utente e il tipo di operazione.
+     *
+     * @param userId l'ID dell'utente che ha effettuato l'accesso
+     * @param operationType il tipo di operazione ("rate" per valutazione, "recommend" per consiglio, "add" per aggiungere libri)
+     */
+    public void setUserId(String userId, String operationType) {
+        this.operationType = operationType;
+
+        // Aggiorna il titolo e il testo del pulsante in base all'operazione
+        if ("rate".equals(operationType)) {
+
+            selectButton.setText("Avanti");
+        } else if ("recommend".equals(operationType)) {
+
+            selectButton.setText("Consiglia");
+        } else if ("add".equals(operationType)) {
+
+            selectButton.setText("Avanti");
+        }
+
+        // Imposta l'ID utente e carica le librerie
+        setUserId(userId);
+    }
+
+    /**
      * Carica le librerie dell'utente dal file CSV.
      * @param userId ID dell'utente di cui caricare le librerie
      */
@@ -151,7 +180,7 @@ public class LibrarySelectionController {
 
     /**
      * Gestisce il click sul pulsante "Seleziona".
-     * Seleziona la libreria scelta e naviga alla schermata di selezione del libro.
+     * Seleziona la libreria scelta e naviga alla schermata appropriata in base al tipo di operazione.
      */
     @FXML
     public void handleSelect(ActionEvent event) {
@@ -167,7 +196,33 @@ public class LibrarySelectionController {
         // Nascondi eventuali messaggi di errore
         errorLabel.setVisible(false);
 
-        // Naviga alla schermata di selezione del libro
+        // Naviga alla schermata appropriata in base al tipo di operazione
+        if ("rate".equals(operationType)) {
+            // Naviga alla selezione del libro per valutazione
+            navigateToBookSelection(event, selectedLibrary, "rate");
+        } else if ("recommend".equals(operationType)) {
+            // Naviga alla selezione del libro per consiglio
+            navigateToBookSelection(event, selectedLibrary, "recommend");
+        } else if ("add".equals(operationType)) {
+            // Naviga alla pagina di aggiunta libri
+            navigateToAddBooks(event, selectedLibrary);
+        } else {
+            // Operazione generica - naviga alla selezione del libro
+            navigateToBookSelection(event, selectedLibrary);
+        }
+    }
+
+    /**
+     * Naviga alla schermata di selezione del libro.
+     */
+    private void navigateToBookSelection(ActionEvent event, String libraryName) {
+        navigateToBookSelection(event, libraryName, null);
+    }
+
+    /**
+     * Naviga alla schermata di selezione del libro con un tipo di operazione specifico.
+     */
+    private void navigateToBookSelection(ActionEvent event, String libraryName, String operationType) {
         try {
             // Carica la pagina di selezione del libro
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/selezionaLibro.fxml"));
@@ -175,17 +230,51 @@ public class LibrarySelectionController {
 
             // Passa i dati al controller
             BookSelectionController controller = loader.getController();
-            controller.setData(userId, selectedLibrary);
+
+            // Passa anche il tipo di operazione se necessario
+            if (operationType != null) {
+                controller.setData(userId, libraryName, operationType);
+            } else {
+                controller.setData(userId, libraryName);
+            }
 
             // Imposta la nuova scena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Seleziona Libro");
+
             stage.show();
 
         } catch (IOException e) {
             System.err.println("Errore nel caricamento della pagina di selezione libro: " + e.getMessage());
+            e.printStackTrace();
+            errorLabel.setText("Errore: " + e.getMessage());
+            errorLabel.setVisible(true);
+        }
+    }
+
+    /**
+     * Naviga alla schermata di aggiunta libri.
+     */
+    private void navigateToAddBooks(ActionEvent event, String libraryName) {
+        try {
+            // Carica la pagina di aggiunta libri
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/aggiungilibro.fxml"));
+            Parent root = loader.load();
+
+            // Passa i dati al controller
+            AddBooksToLibraryController controller = loader.getController();
+            controller.setData(userId, libraryName);
+
+            // Imposta la nuova scena
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("Errore nel caricamento della pagina di aggiunta libri: " + e.getMessage());
             e.printStackTrace();
             errorLabel.setText("Errore: " + e.getMessage());
             errorLabel.setVisible(true);
@@ -227,7 +316,7 @@ public class LibrarySelectionController {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Menu Utente");
+
             stage.show();
 
         } catch (IOException e) {
@@ -236,5 +325,4 @@ public class LibrarySelectionController {
             errorLabel.setText("Errore: " + e.getMessage());
             errorLabel.setVisible(true);
         }
-    }
-}
+    }}

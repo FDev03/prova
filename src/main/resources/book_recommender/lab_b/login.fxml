@@ -11,82 +11,106 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="600.0" maxWidth="800.0" minHeight="600.0" minWidth="800.0" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="book_recommender.lab_b.LoginController" onKeyPressed="#handleKeyPress">
+<AnchorPane maxHeight="600.0" maxWidth="800.0" minHeight="600.0" minWidth="800.0"
+            prefHeight="600.0" prefWidth="800.0"
+            style="-fx-background-color: white;"
+            xmlns="http://javafx.com/javafx/20.0.1"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="book_recommender.lab_b.LoginController"
+            onKeyPressed="#handleKeyPress">
    <children>
-      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <children>
-            <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="800.0" spacing="10.0" style="-fx-background-color: #4054B2; -fx-padding: 10px;">
-               <children>
-                  <Label style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" text="Book Recommender" />
-               </children>
-            </HBox>
 
-            <!-- ScrollPane che contiene il contenuto della pagina di login -->
-            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent;">
-               <content>
-                  <VBox alignment="CENTER" spacing="20.0" prefHeight="540.0" prefWidth="800.0">
+      <!-- Barra in alto con titolo -->
+      <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="800.0" spacing="10.0"
+            style="-fx-background-color: #4054B2; -fx-padding: 10px;">
+         <children>
+            <Label style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;"
+                   text="Book Recommender" />
+         </children>
+      </HBox>
+
+      <!-- Pulsante rosso in alto a destra -->
+      <HBox alignment="TOP_RIGHT" AnchorPane.topAnchor="10.0" AnchorPane.rightAnchor="20.0">
+         <children>
+            <Button fx:id="backButton"
+                    mnemonicParsing="false"
+                    onAction="#handleBack"
+                    text="Torna al menu"
+                    style="-fx-background-color: red; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px; -fx-padding: 8px 18px; -fx-cursor: hand;">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Button>
+         </children>
+      </HBox>
+
+      <!-- Contenuto scrollabile -->
+      <ScrollPane fitToWidth="true"
+                  AnchorPane.topAnchor="60.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+                  style="-fx-background-color: transparent; -fx-background: transparent;">
+         <content>
+            <VBox alignment="CENTER" spacing="20.0" prefHeight="540.0" prefWidth="800.0">
+               <children>
+                  <Label style="-fx-font-size: 24px; -fx-text-fill: #4054B2;" text="Login">
+                     <font>
+                        <Font size="24.0" />
+                     </font>
+                  </Label>
+                  <VBox alignment="CENTER" maxWidth="400.0" spacing="10.0">
                      <children>
-                        <Label style="-fx-font-size: 24px; -fx-text-fill: #4054B2;" text="Login">
+                        <Label text="UserID">
                            <font>
-                              <Font size="24.0" />
+                              <Font size="14.0" />
                            </font>
                         </Label>
-                        <VBox alignment="CENTER" maxWidth="400.0" spacing="10.0">
-                           <children>
-                              <Label text="UserID">
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </Label>
-                              <TextField fx:id="userIdField" promptText="Inserisci UserID" onAction="#handleLogin">
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </TextField>
-                              <Label text="Password">
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                                 <VBox.margin>
-                                    <Insets top="10.0" />
-                                 </VBox.margin>
-                              </Label>
-                              <PasswordField fx:id="passwordField" promptText="Inserisci password" onAction="#handleLogin">
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </PasswordField>
-                              <Label fx:id="errorMessage" style="-fx-text-fill: #E5585D;" text="ID o password errata. Riprova." visible="false">
-                                 <VBox.margin>
-                                    <Insets top="5.0" />
-                                 </VBox.margin>
-                              </Label>
-                              <Button fx:id="loginButton" defaultButton="true" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleLogin" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px; -fx-padding: 10px 20px" text="Login">
-                                 <VBox.margin>
-                                    <Insets top="10.0" />
-                                 </VBox.margin>
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </Button>
-                              <Button fx:id="backButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color: #f0f0f0; -fx-text-fill: black; -fx-font-size: 14px; -fx-background-radius: 40px; -fx-padding: 10px 20px;" text="Torna al menu principale">
-                                 <VBox.margin>
-                                    <Insets top="10.0" />
-                                 </VBox.margin>
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </Button>
-                           </children>
-                        </VBox>
+                        <TextField fx:id="userIdField" promptText="Inserisci UserID" onAction="#handleLogin">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </TextField>
+                        <Label text="Password">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                           <VBox.margin>
+                              <Insets top="10.0" />
+                           </VBox.margin>
+                        </Label>
+                        <PasswordField fx:id="passwordField" promptText="Inserisci password" onAction="#handleLogin">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </PasswordField>
+                        <Label fx:id="errorMessage"
+                               text="ID o password errata. Riprova."
+                               visible="false"
+                               style="-fx-text-fill: #E5585D;">
+                           <VBox.margin>
+                              <Insets top="5.0" />
+                           </VBox.margin>
+                        </Label>
+                        <Button fx:id="loginButton"
+                                defaultButton="true"
+                                maxWidth="1.7976931348623157E308"
+                                mnemonicParsing="false"
+                                onAction="#handleLogin"
+                                text="Login"
+                                style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px; -fx-padding: 10px 20px;">
+                           <VBox.margin>
+                              <Insets top="10.0" />
+                           </VBox.margin>
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Button>
                      </children>
-                     <padding>
-                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-                     </padding>
                   </VBox>
-               </content>
-            </ScrollPane>
-         </children>
-      </VBox>
+               </children>
+               <padding>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+               </padding>
+            </VBox>
+         </content>
+      </ScrollPane>
    </children>
 </AnchorPane>

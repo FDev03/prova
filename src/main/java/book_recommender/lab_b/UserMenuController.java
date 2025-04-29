@@ -40,7 +40,6 @@ public class UserMenuController {
     public void setUserData(String userId) {
         this.userId = userId;
         welcomeLabel.setText("Ciao, " + userId + "!");
-
     }
 
     /**
@@ -65,7 +64,7 @@ public class UserMenuController {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender");
+
             stage.show();
         } catch (IOException e) {
             System.err.println("Errore nel caricamento della homepage: " + e.getMessage());
@@ -92,7 +91,6 @@ public class UserMenuController {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Crea Libreria");
             stage.show();
         } catch (IOException e) {
             System.err.println("Errore nel caricamento della pagina di creazione libreria: " + e.getMessage());
@@ -103,7 +101,7 @@ public class UserMenuController {
 
     /**
      * Gestisce il clic sul pulsante "Aggiungi Libro alla Libreria"
-     * Naviga alla schermata di selezione della libreria
+     * Naviga alla schermata di selezione della libreria con modalità di aggiunta libri
      */
     @FXML
     public void onAddBookClicked(ActionEvent event) {
@@ -112,9 +110,6 @@ public class UserMenuController {
             String fxmlFile = "/book_recommender/lab_b/selezionalib.fxml";
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
 
-            // Debug: stampa i dettagli del percorso
-
-
             if (getClass().getResource(fxmlFile) == null) {
                 throw new IOException("File FXML non trovato: " + fxmlFile);
             }
@@ -123,13 +118,14 @@ public class UserMenuController {
 
             // Ottieni il controller e passa i dati necessari
             LibrarySelectionController controller = loader.getController();
-            controller.setUserId(userId);
+            // Specifica che l'operazione è di aggiunta libri
+            controller.setUserId(userId, "add");
 
             // Imposta la nuova scena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Seleziona Libreria");
+
             stage.show();
 
         } catch (IOException e) {
@@ -138,10 +134,9 @@ public class UserMenuController {
             statusLabel.setText("Errore: Impossibile aprire la pagina di selezione libreria");
         }
     }
-
     /**
      * Gestisce il clic sul pulsante "Valuta Libro"
-     * Naviga alla schermata di selezione della libreria
+     * Naviga alla schermata di selezione della libreria con modalità valutazione
      */
     @FXML
     public void onRateBookClicked(ActionEvent event) {
@@ -149,8 +144,6 @@ public class UserMenuController {
             // Carica la pagina di selezione libreria
             String fxmlFile = "/book_recommender/lab_b/selezionalib.fxml";
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
-
-
 
             if (getClass().getResource(fxmlFile) == null) {
                 throw new IOException("File FXML non trovato: " + fxmlFile);
@@ -160,13 +153,13 @@ public class UserMenuController {
 
             // Ottieni il controller e passa i dati necessari
             LibrarySelectionController controller = loader.getController();
-            controller.setUserId(userId);
+            // Specifica che l'operazione è di valutazione
+            controller.setUserId(userId, "rate");
 
             // Imposta la nuova scena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Seleziona Libreria per Valutazione");
             stage.show();
 
         } catch (IOException e) {
@@ -178,7 +171,7 @@ public class UserMenuController {
 
     /**
      * Gestisce il clic sul pulsante "Consiglia Libro"
-     * Naviga alla schermata di selezione della libreria
+     * Naviga alla schermata di selezione della libreria con modalità consiglio
      */
     @FXML
     public void onRecommendBookClicked(ActionEvent event) {
@@ -186,8 +179,6 @@ public class UserMenuController {
             // Carica la pagina di selezione libreria
             String fxmlFile = "/book_recommender/lab_b/selezionalib.fxml";
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
-
-
 
             if (getClass().getResource(fxmlFile) == null) {
                 throw new IOException("File FXML non trovato: " + fxmlFile);
@@ -197,13 +188,14 @@ public class UserMenuController {
 
             // Ottieni il controller e passa i dati necessari
             LibrarySelectionController controller = loader.getController();
-            controller.setUserId(userId);
+            // Specifica che l'operazione è di consiglio
+            controller.setUserId(userId, "recommend");
 
             // Imposta la nuova scena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Seleziona Libreria per Raccomandazione");
+
             stage.show();
 
         } catch (IOException e) {
@@ -211,5 +203,4 @@ public class UserMenuController {
             e.printStackTrace();
             statusLabel.setText("Errore: Impossibile aprire la pagina di selezione libreria");
         }
-    }
-}
+    }}

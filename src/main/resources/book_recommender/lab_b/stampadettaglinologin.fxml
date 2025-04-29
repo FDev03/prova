@@ -21,7 +21,9 @@
                   <Label style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" text="Book Recommender" />
                   <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
                      <children>
-                        <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color:red; -fx-text-fill: white;" text="Back" />
+                        <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack"
+                                style="-fx-background-color: red; -fx-text-fill: white; -fx-background-radius: 30; -fx-padding: 8 16;"
+                                text="Torna al menù" />
                      </children>
                   </HBox>
                </children>

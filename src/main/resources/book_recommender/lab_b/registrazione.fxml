@@ -15,14 +15,20 @@
    <children>
       <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="200.0" spacing="10.0" style="-fx-background-color: #4054B2; -fx-padding: 10px;">
+            <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="800.0" spacing="10.0" style="-fx-background-color: #4054B2; -fx-padding: 10px;">
                <children>
                   <Label style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" text="Book Recommender" />
+                  <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
+                     <children>
+                        <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" prefHeight="30.0" prefWidth="200.0"
+                                style="-fx-background-color:red; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px;"
+                                text="Torna al menu" />
+                     </children>
+                  </HBox>
                </children>
             </HBox>
 
-            <!-- ScrollPane che contiene tutto il contenuto della pagina di registrazione -->
-            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent;">
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
                <content>
                   <VBox alignment="CENTER" spacing="15.0">
                      <children>
@@ -43,16 +49,8 @@
                                     <Font size="14.0" />
                                  </font>
                               </Label>
-                              <TextField fx:id="nomeCognomeField" promptText="Inserisci nome e cognome">
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </TextField>
-                              <Label fx:id="nomeCognomeError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="Errore: Il nome e cognome non possono essere vuoti." visible="false">
-                                 <VBox.margin>
-                                    <Insets top="2.0" />
-                                 </VBox.margin>
-                              </Label>
+                              <TextField fx:id="nomeCognomeField" promptText="Inserisci nome e cognome" />
+                              <Label fx:id="nomeCognomeError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="Errore: Il nome e cognome non possono essere vuoti." visible="false" />
 
                               <Label text="UserID (massimo 8 caratteri):">
                                  <font>
@@ -62,21 +60,9 @@
                                     <Insets top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <TextField fx:id="userIdField" promptText="Inserisci UserID">
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </TextField>
-                              <Label fx:id="userIdError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="Errore: l'UserID deve essere al massimo di 8 caratteri." visible="false">
-                                 <VBox.margin>
-                                    <Insets top="2.0" />
-                                 </VBox.margin>
-                              </Label>
-                              <Label fx:id="userIdExistsError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="UserID già esistente. Procedere al login?" visible="false">
-                                 <VBox.margin>
-                                    <Insets top="2.0" />
-                                 </VBox.margin>
-                              </Label>
+                              <TextField fx:id="userIdField" promptText="Inserisci UserID" />
+                              <Label fx:id="userIdError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="Errore: l'UserID deve essere al massimo di 8 caratteri." visible="false" />
+                              <Label fx:id="userIdExistsError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="UserID già esistente. Procedere al login?" visible="false" />
 
                               <Label text="Codice Fiscale:">
                                  <font>
@@ -86,16 +72,8 @@
                                     <Insets top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <TextField fx:id="codiceFiscaleField" promptText="Inserisci codice fiscale">
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </TextField>
-                              <Label fx:id="codiceFiscaleError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="Errore: il codice fiscale deve seguire il formato XXXXXX00X00X000X, riprova." visible="false">
-                                 <VBox.margin>
-                                    <Insets top="2.0" />
-                                 </VBox.margin>
-                              </Label>
+                              <TextField fx:id="codiceFiscaleField" promptText="Inserisci codice fiscale" />
+                              <Label fx:id="codiceFiscaleError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="Errore: il codice fiscale deve seguire il formato XXXXXX00X00X000X, riprova." visible="false" />
 
                               <Label text="Indirizzo di Posta Elettronica:">
                                  <font>
@@ -105,16 +83,8 @@
                                     <Insets top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <TextField fx:id="emailField" promptText="Inserisci email">
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </TextField>
-                              <Label fx:id="emailError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="Errore: formato email non valido." visible="false">
-                                 <VBox.margin>
-                                    <Insets top="2.0" />
-                                 </VBox.margin>
-                              </Label>
+                              <TextField fx:id="emailField" promptText="Inserisci email" />
+                              <Label fx:id="emailError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="Errore: formato email non valido." visible="false" />
 
                               <Label text="Password:">
                                  <font>
@@ -124,21 +94,9 @@
                                     <Insets top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <PasswordField fx:id="passwordField" promptText="Inserisci password">
-                                 <font>
-                                    <Font size="14.0" />
-                                 </font>
-                              </PasswordField>
-                              <Label style="-fx-text-fill: #666666; -fx-font-size: 12px;" text="La password deve contenere almeno 8 caratteri, includere almeno una lettera maiuscola, una lettera minuscola, un numero e un carattere speciale (@$!%*?&amp;)." wrapText="true">
-                                 <VBox.margin>
-                                    <Insets top="2.0" />
-                                 </VBox.margin>
-                              </Label>
-                              <Label fx:id="passwordError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" text="Errore: la password deve contenere almeno 8 caratteri, includere almeno una lettera maiuscola, una lettera minuscola, un numero e un carattere speciale." visible="false" wrapText="true">
-                                 <VBox.margin>
-                                    <Insets top="2.0" />
-                                 </VBox.margin>
-                              </Label>
+                              <PasswordField fx:id="passwordField" promptText="Inserisci password" />
+                              <Label style="-fx-text-fill: #666666; -fx-font-size: 12px;" wrapText="true" text="La password deve contenere almeno 8 caratteri, includere almeno una lettera maiuscola, una lettera minuscola, un numero e un carattere speciale (@$!%*?&amp;)." />
+                              <Label fx:id="passwordError" style="-fx-text-fill: #E5585D; -fx-font-size: 12px;" wrapText="true" text="Errore: la password deve contenere almeno 8 caratteri, includere almeno una lettera maiuscola, una lettera minuscola, un numero e un carattere speciale." visible="false" />
 
                               <Label fx:id="successMessage" style="-fx-text-fill: #75B965; -fx-font-size: 14px; -fx-font-weight: bold;" text="✓ Registrazione completata con successo!" visible="false">
                                  <VBox.margin>
@@ -151,8 +109,9 @@
                                     <Insets top="20.0" />
                                  </VBox.margin>
                                  <children>
-                                    <Button fx:id="registerButton" mnemonicParsing="false" onAction="#handleRegistration" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px; -fx-padding: 10px 20px; " text="Registrati" />
-                                    <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #f0f0f0; -fx-text-fill: black; -fx-font-size: 14px; -fx-background-radius: 40px; -fx-padding: 10px 20px; " text="Torna al menu principale" />
+                                    <Button fx:id="registerButton" mnemonicParsing="false" onAction="#handleRegistration" prefHeight="40.0" prefWidth="200.0"
+                                            style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px;"
+                                            text="Registrati" />
                                  </children>
                               </HBox>
                            </children>

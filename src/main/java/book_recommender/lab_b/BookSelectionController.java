@@ -53,6 +53,9 @@ public class BookSelectionController {
     private String libraryName;
     private List<String> books = new ArrayList<>();
 
+    // Variabile per tracciare l'operazione corrente (valutazione, aggiunta, ecc.)
+    private String operationType;
+
     /**
      * Inizializza il controller.
      * Questo metodo viene chiamato automaticamente da JavaFX dopo che l'FXML è stato caricato.
@@ -61,6 +64,9 @@ public class BookSelectionController {
         // Nasconde i messaggi di errore all'inizio
         errorLabel.setVisible(false);
         noBooksLabel.setVisible(false);
+
+        // Imposta l'operazione predefinita
+        operationType = "select"; // Operazione generica di selezione
 
         // Aggiungi event listener per il tasto Enter nella ListView
         booksListView.setOnKeyPressed(this::handleKeyPress);
@@ -107,6 +113,27 @@ public class BookSelectionController {
             noBooksLabel.setVisible(false);
             selectButton.setDisable(false);
         }
+    }
+
+    /**
+     * Imposta i dati necessari e specifica il tipo di operazione.
+     *
+     * @param userId ID dell'utente
+     * @param libraryName nome della libreria selezionata
+     * @param operationType tipo di operazione ("rate" per valutazione, "recommend" per consiglio)
+     */
+    public void setData(String userId, String libraryName, String operationType) {
+        this.operationType = operationType;
+
+        // Imposta il titolo del pulsante in base all'operazione
+        if ("rate".equals(operationType)) {
+            selectButton.setText("Avanti");
+        } else if ("recommend".equals(operationType)) {
+            selectButton.setText("Avanti");
+        }
+
+        // Imposta gli altri dati
+        setData(userId, libraryName);
     }
 
     /**
@@ -180,13 +207,51 @@ public class BookSelectionController {
         // Nascondi eventuali messaggi di errore
         errorLabel.setVisible(false);
 
-        // Qui puoi aggiungere il codice per gestire l'operazione successiva
-        // Per esempio, mostrare i dettagli del libro o richiedere consigli
+        // Gestisci in base al tipo di operazione
+        if ("rate".equals(operationType)) {
+            // Naviga alla pagina di valutazione del libro
+            navigateToRateBook(event, selectedBook);
+        } else if ("recommend".equals(operationType)) {
+            // Naviga alla pagina di consiglio del libro (non implementata in questo esempio)
+            // navigateToRecommendBook(event, selectedBook);
+            errorLabel.setText("Funzionalità di consiglio non ancora implementata.");
+            errorLabel.setStyle("-fx-text-fill: #E5585D;"); // Rosso per l'errore
+            errorLabel.setVisible(true);
+        } else {
+            // Operazione generica di selezione
+            errorLabel.setText("Libro '" + selectedBook + "' selezionato con successo!");
+            errorLabel.setStyle("-fx-text-fill: #75B965;"); // Verde per il successo
+            errorLabel.setVisible(true);
+        }
+    }
 
-        // Per ora, mostreremo un messaggio di successo
-        errorLabel.setText("Libro '" + selectedBook + "' selezionato con successo!");
-        errorLabel.setStyle("-fx-text-fill: #75B965;"); // Verde per il successo
-        errorLabel.setVisible(true);
+    /**
+     * Naviga alla pagina di valutazione del libro.
+     * PERCORSO CORRETTO PER VALUTAZIONE.FXML
+     */
+    private void navigateToRateBook(ActionEvent event, String bookTitle) {
+        try {
+            // Carica la pagina di valutazione del libro con il percorso corretto
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/valutazione.fxml"));
+            Parent root = loader.load();
+
+            // Ottieni il controller e passa i dati necessari
+            book_recommender.lab_b.RateBookController controller = loader.getController();
+            controller.setData(userId, bookTitle, libraryName);
+
+            // Imposta la nuova scena
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("Errore nel caricamento della pagina di valutazione libro: " + e.getMessage());
+            e.printStackTrace();
+            errorLabel.setText("Errore: " + e.getMessage());
+            errorLabel.setVisible(true);
+        }
     }
 
     /**
@@ -218,7 +283,15 @@ public class BookSelectionController {
 
             // Ottieni il controller e passa i dati dell'utente
             LibrarySelectionController controller = loader.getController();
-            controller.setUserId(userId);
+
+            // Passa anche il tipo di operazione se necessario
+            if ("rate".equals(operationType)) {
+                controller.setUserId(userId, "rate");
+            } else if ("recommend".equals(operationType)) {
+                controller.setUserId(userId, "recommend");
+            } else {
+                controller.setUserId(userId);
+            }
 
             // Imposta la nuova scena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();

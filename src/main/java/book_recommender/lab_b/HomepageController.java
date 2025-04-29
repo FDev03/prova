@@ -371,7 +371,6 @@ public class HomepageController implements Initializable {
             // Imposta la nuova scena
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Login");
             stage.show();
 
         } catch (IOException e) {
@@ -403,7 +402,7 @@ public class HomepageController implements Initializable {
             // Imposta la nuova scena
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Registrazione");
+
             stage.show();
 
         } catch (IOException e) {
@@ -602,7 +601,7 @@ public class HomepageController implements Initializable {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Dettagli Libro");
+
             stage.show();
 
         } catch (IOException e) {
