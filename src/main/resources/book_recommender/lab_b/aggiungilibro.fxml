@@ -67,10 +67,10 @@
                                             </VBox.margin>
                                         </Label>
 
-                                        <TabPane prefHeight="510.0" style="-fx-background-color: transparent;" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                                        <TabPane prefHeight="510.0" style="-fx-background-color: transparent; -fx-tab-min-width: 150px; -fx-tab-max-width: 150px; -fx-tab-min-height: 45px; -fx-tab-max-height: 45px;" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
                                             <tabs>
                                                 <!-- Tab ricerca per titolo -->
-                                                <Tab text="Titolo">
+                                                <Tab style="-fx-background-color: #4099FF; -fx-background-radius: 8px 8px 0 0; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" text="Titolo">
                                                     <graphic>
                                                         <HBox alignment="CENTER" spacing="5.0">
                                                             <children>
@@ -115,14 +115,10 @@
                                                             </children>
                                                         </AnchorPane>
                                                     </content>
-                                                    <style>
-                                                        -fx-background-color: #f0f8ff;
-                                                        -fx-padding: 5;
-                                                    </style>
                                                 </Tab>
 
                                                 <!-- Tab ricerca per autore -->
-                                                <Tab text="Autore">
+                                                <Tab style="-fx-background-color: #4099FF; -fx-background-radius: 8px 8px 0 0; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" text="Autore">
                                                     <graphic>
                                                         <HBox alignment="CENTER" spacing="5.0">
                                                             <children>
@@ -167,14 +163,10 @@
                                                             </children>
                                                         </AnchorPane>
                                                     </content>
-                                                    <style>
-                                                        -fx-background-color: #f0fff0;
-                                                        -fx-padding: 5;
-                                                    </style>
                                                 </Tab>
 
                                                 <!-- Tab ricerca per autore e anno -->
-                                                <Tab text="Autore e Anno">
+                                                <Tab style="-fx-background-color: #4099FF; -fx-background-radius: 8px 8px 0 0; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" text="Autore e Anno">
                                                     <graphic>
                                                         <HBox alignment="CENTER" spacing="5.0">
                                                             <children>
@@ -224,18 +216,8 @@
                                                             </children>
                                                         </AnchorPane>
                                                     </content>
-                                                    <style>
-                                                        -fx-background-color: #fff0f0;
-                                                        -fx-padding: 5;
-                                                    </style>
                                                 </Tab>
                                             </tabs>
-                                            <style>
-                                                -fx-tab-min-width: 150px;
-                                                -fx-tab-max-width: 150px;
-                                                -fx-tab-min-height: 40px;
-                                                -fx-tab-max-height: 40px;
-                                            </style>
                                         </TabPane>
                                     </children>
                                     <padding>
