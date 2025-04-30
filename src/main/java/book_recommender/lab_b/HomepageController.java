@@ -148,10 +148,10 @@ public class HomepageController implements Initializable {
             titleHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
 
            Label authorHeader = new Label("Top 3 libri per valutazione: ");
-            authorHeader.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #4054B2; -fx-padding: 10px 0 15px 0;");
+            authorHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
 
             Label authorYearHeader = new Label("Top 3 libri per valutazione: ");
-            authorYearHeader.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #4054B2; -fx-padding: 10px 0 15px 0;");
+            authorYearHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
 
             if (bookListContainer != null) {
                 bookListContainer.getChildren().add(titleHeader);
