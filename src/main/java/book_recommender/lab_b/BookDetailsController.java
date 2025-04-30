@@ -74,8 +74,6 @@ public class BookDetailsController implements Initializable {
     @FXML
     private Label recommendedBooksLabel;
 
-    @FXML
-    private Button closeButton;
 
     @FXML
     private Button backButton;
@@ -965,6 +963,7 @@ public class BookDetailsController implements Initializable {
         return true;
     }
 
+// Rimuovere questo metodo completo
     /**
      * Gestisce il click sul pulsante "Chiudi".
      */
@@ -985,7 +984,6 @@ public class BookDetailsController implements Initializable {
             e.printStackTrace();
         }
     }
-
     /**
      * Gestisce il click sul pulsante "Torna indietro".
      */
