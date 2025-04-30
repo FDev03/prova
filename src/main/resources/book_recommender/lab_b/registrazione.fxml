@@ -11,17 +11,17 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="book_recommender.lab_b.RegistrationController">
+<AnchorPane minHeight="600.0" minWidth="800.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="book_recommender.lab_b.RegistrationController">
    <children>
       <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="800.0" spacing="10.0" style="-fx-background-color: #4054B2; -fx-padding: 10px;">
+            <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="10.0" style="-fx-background-color: #4054B2; -fx-padding: 10px;" VBox.vgrow="NEVER">
                <children>
                   <Label style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" text="Book Recommender" />
                   <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
                      <children>
-                        <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" prefHeight="30.0" prefWidth="200.0"
-                                style="-fx-background-color:red; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px;"
+                        <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack"
+                                style="-fx-background-color:red; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px; -fx-padding: 8px 15px;"
                                 text="Torna al menu" />
                      </children>
                   </HBox>
@@ -42,14 +42,14 @@
                               <Insets bottom="5.0" />
                            </VBox.margin>
                         </Label>
-                        <VBox alignment="CENTER" maxWidth="500.0" spacing="5.0">
+                        <VBox alignment="CENTER" maxWidth="600.0" minWidth="300.0" spacing="5.0" VBox.vgrow="ALWAYS">
                            <children>
                               <Label text="Nome e Cognome:">
                                  <font>
                                     <Font size="14.0" />
                                  </font>
                               </Label>
-                              <TextField fx:id="nomeCognomeField" promptText="Inserisci nome e cognome" />
+                              <TextField fx:id="nomeCognomeField" maxWidth="1.7976931348623157E308" promptText="Inserisci nome e cognome" />
                               <Label fx:id="nomeCognomeError" style="-fx-text-fill: red; -fx-font-size: 12px;" text="Errore: Il nome e cognome non possono essere vuoti." visible="false" />
 
                               <Label text="UserID (massimo 8 caratteri):">
@@ -60,7 +60,7 @@
                                     <Insets top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <TextField fx:id="userIdField" promptText="Inserisci UserID" />
+                              <TextField fx:id="userIdField" maxWidth="1.7976931348623157E308" promptText="Inserisci UserID" />
                               <Label fx:id="userIdError" style="-fx-text-fill: red; -fx-font-size: 12px;" text="Errore: l'UserID deve essere al massimo di 8 caratteri." visible="false" />
                               <Label fx:id="userIdExistsError" style="-fx-text-fill: red; -fx-font-size: 12px;" text="UserID già esistente. Procedere al login?" visible="false" />
 
@@ -72,7 +72,7 @@
                                     <Insets top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <TextField fx:id="codiceFiscaleField" promptText="Inserisci codice fiscale" />
+                              <TextField fx:id="codiceFiscaleField" maxWidth="1.7976931348623157E308" promptText="Inserisci codice fiscale" />
                               <Label fx:id="codiceFiscaleError" style="-fx-text-fill: red; -fx-font-size: 12px;" text="Errore: il codice fiscale deve seguire il formato XXXXXX00X00X000X, riprova." visible="false" />
 
                               <Label text="Indirizzo di Posta Elettronica:">
@@ -83,7 +83,7 @@
                                     <Insets top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <TextField fx:id="emailField" promptText="Inserisci email" />
+                              <TextField fx:id="emailField" maxWidth="1.7976931348623157E308" promptText="Inserisci email" />
                               <Label fx:id="emailError" style="-fx-text-fill: red; -fx-font-size: 12px;" text="Errore: formato email non valido." visible="false" />
 
                               <Label text="Password:">
@@ -94,7 +94,7 @@
                                     <Insets top="10.0" />
                                  </VBox.margin>
                               </Label>
-                              <PasswordField fx:id="passwordField" promptText="Inserisci password" />
+                              <PasswordField fx:id="passwordField" maxWidth="1.7976931348623157E308" promptText="Inserisci password" />
                               <Label style="-fx-text-fill: #666666; -fx-font-size: 12px;" wrapText="true" text="La password deve contenere almeno 8 caratteri, includere almeno una lettera maiuscola, una lettera minuscola, un numero e un carattere speciale (@$!%*?&amp;)." />
                               <Label fx:id="passwordError" style="-fx-text-fill: red; -fx-font-size: 12px;" wrapText="true" text="Errore: la password deve contenere almeno 8 caratteri, includere almeno una lettera maiuscola, una lettera minuscola, un numero e un carattere speciale." visible="false" />
 
@@ -109,12 +109,15 @@
                                     <Insets top="20.0" />
                                  </VBox.margin>
                                  <children>
-                                    <Button fx:id="registerButton" mnemonicParsing="false" onAction="#handleRegistration" prefHeight="40.0" prefWidth="200.0"
-                                            style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px;"
-                                            text="Registrati" />
+                                    <Button fx:id="registerButton" maxWidth="1.7976931348623157E308" minHeight="40.0" mnemonicParsing="false" onAction="#handleRegistration"
+                                            style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 40px; -fx-padding: 10px 20px;"
+                                            text="Registrati" HBox.hgrow="ALWAYS" />
                                  </children>
                               </HBox>
                            </children>
+                           <VBox.margin>
+                              <Insets left="20.0" right="20.0" />
+                           </VBox.margin>
                         </VBox>
                      </children>
                      <padding>

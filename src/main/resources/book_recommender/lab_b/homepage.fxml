@@ -12,12 +12,12 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane fx:controller="book_recommender.lab_b.HomepageController" maxHeight="600.0" maxWidth="800.0" minHeight="600.0" minWidth="800.0" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17.0.6" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane fx:controller="book_recommender.lab_b.HomepageController" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17.0.6" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
             <!-- Header con logo e pulsanti di login/registrazione -->
-            <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="800.0" spacing="10.0" style="-fx-background-color: #4054B2; -fx-padding: 10px;">
+            <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="10.0" style="-fx-background-color: #4054B2; -fx-padding: 10px;" HBox.hgrow="ALWAYS">
                <children>
                   <Label style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" text="Book Recommender" />
                   <Region HBox.hgrow="ALWAYS" />
@@ -27,19 +27,19 @@
             </HBox>
 
             <!-- Navigation tabs -->
-            <HBox prefHeight="40.0" prefWidth="800.0" style="-fx-background-color: transparent;">
+            <HBox prefHeight="40.0" style="-fx-background-color: transparent;" HBox.hgrow="ALWAYS">
                <children>
-                  <Button fx:id="titleTabButton" mnemonicParsing="false" onAction="#onTitleTabClicked" prefHeight="40.0" prefWidth="266.0" style="-fx-background-color: #4E90E2; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 0;" text="Titolo" />
-                  <Button fx:id="authorTabButton" mnemonicParsing="false" onAction="#onAuthorTabClicked" prefHeight="40.0" prefWidth="266.0" style="-fx-background-color: white; -fx-text-fill: black; -fx-font-size: 14px; -fx-background-radius: 0;" text="Autore" />
-                  <Button fx:id="authorYearTabButton" mnemonicParsing="false" onAction="#onAuthorYearTabClicked" prefHeight="40.0" prefWidth="266.0" style="-fx-background-color: white; -fx-text-fill: black; -fx-font-size: 14px; -fx-background-radius: 0;" text="Autore e Anno" />
+                  <Button fx:id="titleTabButton" mnemonicParsing="false" onAction="#onTitleTabClicked" prefHeight="40.0" maxWidth="Infinity" HBox.hgrow="ALWAYS" style="-fx-background-color: #4E90E2; -fx-text-fill: white; -fx-font-size: 14px; -fx-background-radius: 0;" text="Titolo" />
+                  <Button fx:id="authorTabButton" mnemonicParsing="false" onAction="#onAuthorTabClicked" prefHeight="40.0" maxWidth="Infinity" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-text-fill: black; -fx-font-size: 14px; -fx-background-radius: 0;" text="Autore" />
+                  <Button fx:id="authorYearTabButton" mnemonicParsing="false" onAction="#onAuthorYearTabClicked" prefHeight="40.0" maxWidth="Infinity" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-text-fill: black; -fx-font-size: 14px; -fx-background-radius: 0;" text="Autore e Anno" />
                </children>
             </HBox>
 
             <!-- Tab content container -->
-            <StackPane id="pagesContainer" prefHeight="500.0" prefWidth="800.0" VBox.vgrow="ALWAYS">
+            <StackPane id="pagesContainer" prefHeight="500.0" VBox.vgrow="ALWAYS">
                <children>
                   <!-- Title search page -->
-                  <VBox fx:id="titlePage" prefHeight="500.0" prefWidth="800.0" spacing="10.0">
+                  <VBox fx:id="titlePage" spacing="10.0" VBox.vgrow="ALWAYS">
                      <padding>
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                      </padding>
@@ -55,7 +55,7 @@
                         </HBox>
 
                         <!-- Scrollable book list for title search -->
-                        <ScrollPane fitToWidth="true" prefHeight="400.0" prefWidth="780.0" style="-fx-background-color: transparent;" VBox.vgrow="ALWAYS">
+                        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" VBox.vgrow="ALWAYS">
                            <content>
                               <VBox fx:id="bookListContainer" spacing="15.0" style="-fx-background-color: white;">
                                  <padding>
@@ -68,7 +68,7 @@
                   </VBox>
 
                   <!-- Author search page -->
-                  <VBox fx:id="authorPage" prefHeight="500.0" prefWidth="800.0" spacing="10.0" visible="false">
+                  <VBox fx:id="authorPage" spacing="10.0" visible="false" VBox.vgrow="ALWAYS">
                      <padding>
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                      </padding>
@@ -84,7 +84,7 @@
                         </HBox>
 
                         <!-- Scrollable book list for author search -->
-                        <ScrollPane fitToWidth="true" prefHeight="400.0" prefWidth="780.0" style="-fx-background-color: transparent;" VBox.vgrow="ALWAYS">
+                        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" VBox.vgrow="ALWAYS">
                            <content>
                               <VBox fx:id="authorBookListContainer" spacing="15.0" style="-fx-background-color: white;">
                                  <padding>
@@ -97,7 +97,7 @@
                   </VBox>
 
                   <!-- Author and Year search page -->
-                  <VBox fx:id="authorYearPage" prefHeight="500.0" prefWidth="800.0" spacing="10.0" visible="false">
+                  <VBox fx:id="authorYearPage" spacing="10.0" visible="false" VBox.vgrow="ALWAYS">
                      <padding>
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                      </padding>
@@ -114,7 +114,7 @@
                         </HBox>
 
                         <!-- Scrollable book list for author+year search -->
-                        <ScrollPane fitToWidth="true" prefHeight="400.0" prefWidth="780.0" style="-fx-background-color: transparent;" VBox.vgrow="ALWAYS">
+                        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" VBox.vgrow="ALWAYS">
                            <content>
                               <VBox fx:id="authorYearBookListContainer" spacing="15.0" style="-fx-background-color: white;">
                                  <padding>

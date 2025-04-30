@@ -8,17 +8,17 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<?import javafx.scene.effect.DropShadow?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1000.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="book_recommender.lab_b.AddBooksToLibraryController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="600.0" minWidth="800.0" prefHeight="700.0" prefWidth="1000.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="book_recommender.lab_b.AddBooksToLibraryController">
     <children>
         <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <children>
-                <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="200.0" spacing="10.0" style="-fx-background-color: #4054B2; -fx-padding: 10px;">
+                <HBox alignment="CENTER_LEFT" prefHeight="-Infinity" minHeight="60.0" spacing="10.0" style="-fx-background-color: #4054B2; -fx-padding: 10px;" VBox.vgrow="NEVER">
                     <children>
                         <Label style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" text="Book Recommender" />
                         <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
@@ -28,7 +28,7 @@
                                         <Insets right="15.0" />
                                     </HBox.margin>
                                 </Label>
-                                <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color: red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Torna al menu">
+                                <Button fx:id="backButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBack" style="-fx-background-color: red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Torna al menu">
                                     <effect>
                                         <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
                                     </effect>
@@ -40,7 +40,7 @@
                         </HBox>
                     </children>
                 </HBox>
-                <VBox alignment="CENTER" prefHeight="640.0" prefWidth="1000.0" spacing="10.0">
+                <VBox alignment="CENTER" spacing="10.0" VBox.vgrow="ALWAYS">
                     <children>
                         <Label style="-fx-font-size: 24px; -fx-text-fill: #4054B2;" text="Aggiungi Libri alla Libreria">
                             <font>
@@ -53,10 +53,10 @@
                             </VBox.margin>
                         </Label>
 
-                        <HBox alignment="CENTER" prefHeight="550.0" prefWidth="1000.0" spacing="20.0" VBox.vgrow="ALWAYS">
+                        <HBox alignment="CENTER" spacing="20.0" VBox.vgrow="ALWAYS">
                             <children>
                                 <!-- Pannello sinistro - Ricerca libri -->
-                                <VBox prefHeight="550.0" prefWidth="600.0" style="-fx-border-color: #EEEEEE; -fx-border-radius: 8; -fx-background-color: #fafafa; -fx-background-radius: 8;">
+                                <VBox HBox.hgrow="ALWAYS" prefHeight="-Infinity" style="-fx-border-color: #EEEEEE; -fx-border-radius: 8; -fx-background-color: #fafafa; -fx-background-radius: 8;">
                                     <effect>
                                         <DropShadow color="#00000026" height="10.0" radius="4.5" width="10.0" />
                                     </effect>
@@ -67,30 +67,31 @@
                                             </VBox.margin>
                                         </Label>
 
-                                        <TabPane prefHeight="510.0" style="-fx-background-color: transparent; -fx-tab-min-width: 150px; -fx-tab-max-width: 150px; -fx-tab-min-height: 45px; -fx-tab-max-height: 45px;" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                                        <!-- TabPane con tab più piccoli -->
+                                        <TabPane style="-fx-background-color: transparent; -fx-tab-min-height: 35px; -fx-tab-max-height: 35px;" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
                                             <tabs>
                                                 <!-- Tab ricerca per titolo -->
-                                                <Tab style="-fx-background-color: #4099FF; -fx-background-radius: 8px 8px 0 0; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" text="Titolo">
+                                                <Tab style="-fx-background-color: lightgreen; -fx-background-radius: 8px 8px 0 0; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" text="Titolo">
                                                     <graphic>
                                                         <HBox alignment="CENTER" spacing="5.0">
                                                             <children>
-                                                                <Label style="-fx-font-size: 14px;" text="📚" />
+                                                                <Label style="-fx-font-size: 16px;" text="📚" />
                                                             </children>
                                                         </HBox>
                                                     </graphic>
                                                     <content>
                                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                             <children>
-                                                                <VBox prefHeight="470.0" prefWidth="598.0" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                                <VBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                     <children>
                                                                         <HBox spacing="10.0">
                                                                             <children>
-                                                                                <TextField fx:id="titleSearchField" prefHeight="40.0" promptText="Cerca per titolo..." style="-fx-background-radius: 20; -fx-padding: 0 15;" HBox.hgrow="ALWAYS">
+                                                                                <TextField fx:id="titleSearchField" minHeight="40.0" promptText="Cerca per titolo..." style="-fx-background-radius: 20; -fx-padding: 0 15;" HBox.hgrow="ALWAYS">
                                                                                     <HBox.margin>
                                                                                         <Insets />
                                                                                     </HBox.margin>
                                                                                 </TextField>
-                                                                                <Button fx:id="titleSearchButton" mnemonicParsing="false" onAction="#handleTitleSearch" prefHeight="40.0" prefWidth="100.0" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Cerca">
+                                                                                <Button fx:id="titleSearchButton" maxHeight="1.7976931348623157E308" minHeight="40.0" minWidth="100.0" mnemonicParsing="false" onAction="#handleTitleSearch" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Cerca">
                                                                                     <effect>
                                                                                         <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
                                                                                     </effect>
@@ -100,7 +101,7 @@
                                                                                 <Insets />
                                                                             </VBox.margin>
                                                                         </HBox>
-                                                                        <ScrollPane fitToWidth="true" prefHeight="420.0" style="-fx-background: transparent; -fx-background-color: transparent;" VBox.vgrow="ALWAYS">
+                                                                        <ScrollPane fitToWidth="true" style="-fx-background: transparent; -fx-background-color: transparent;" VBox.vgrow="ALWAYS">
                                                                             <content>
                                                                                 <VBox fx:id="titleResultsContainer" spacing="10.0">
                                                                                     <!-- I risultati della ricerca per titolo verranno aggiunti qui dinamicamente -->
@@ -118,27 +119,27 @@
                                                 </Tab>
 
                                                 <!-- Tab ricerca per autore -->
-                                                <Tab style="-fx-background-color: #4099FF; -fx-background-radius: 8px 8px 0 0; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" text="Autore">
+                                                <Tab style="-fx-background-color: lightgrey; -fx-background-radius: 8px 8px 0 0; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" text="Autore">
                                                     <graphic>
                                                         <HBox alignment="CENTER" spacing="5.0">
                                                             <children>
-                                                                <Label style="-fx-font-size: 14px;" text="✍️" />
+                                                                <Label style="-fx-font-size: 34px;" text="✍️" />
                                                             </children>
                                                         </HBox>
                                                     </graphic>
                                                     <content>
                                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                             <children>
-                                                                <VBox prefHeight="470.0" prefWidth="598.0" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                                <VBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                     <children>
                                                                         <HBox spacing="10.0">
                                                                             <children>
-                                                                                <TextField fx:id="authorSearchField" prefHeight="40.0" promptText="Cerca per autore..." style="-fx-background-radius: 20; -fx-padding: 0 15;" HBox.hgrow="ALWAYS">
+                                                                                <TextField fx:id="authorSearchField" minHeight="40.0" promptText="Cerca per autore..." style="-fx-background-radius: 20; -fx-padding: 0 15;" HBox.hgrow="ALWAYS">
                                                                                     <HBox.margin>
                                                                                         <Insets />
                                                                                     </HBox.margin>
                                                                                 </TextField>
-                                                                                <Button fx:id="authorSearchButton" mnemonicParsing="false" onAction="#handleAuthorSearch" prefHeight="40.0" prefWidth="100.0" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Cerca">
+                                                                                <Button fx:id="authorSearchButton" maxHeight="1.7976931348623157E308" minHeight="40.0" minWidth="100.0" mnemonicParsing="false" onAction="#handleAuthorSearch" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Cerca">
                                                                                     <effect>
                                                                                         <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
                                                                                     </effect>
@@ -148,7 +149,7 @@
                                                                                 <Insets />
                                                                             </VBox.margin>
                                                                         </HBox>
-                                                                        <ScrollPane fitToWidth="true" prefHeight="420.0" style="-fx-background: transparent; -fx-background-color: transparent;" VBox.vgrow="ALWAYS">
+                                                                        <ScrollPane fitToWidth="true" style="-fx-background: transparent; -fx-background-color: transparent;" VBox.vgrow="ALWAYS">
                                                                             <content>
                                                                                 <VBox fx:id="authorResultsContainer" spacing="10.0">
                                                                                     <!-- I risultati della ricerca per autore verranno aggiunti qui dinamicamente -->
@@ -166,32 +167,32 @@
                                                 </Tab>
 
                                                 <!-- Tab ricerca per autore e anno -->
-                                                <Tab style="-fx-background-color: #4099FF; -fx-background-radius: 8px 8px 0 0; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" text="Autore e Anno">
+                                                <Tab style="-fx-background-color: skyblue; -fx-background-radius: 8px 8px 0 0; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;" text="Autore e Anno">
                                                     <graphic>
                                                         <HBox alignment="CENTER" spacing="5.0">
                                                             <children>
-                                                                <Label style="-fx-font-size: 14px;" text="📅" />
+                                                                <Label style="-fx-font-size: 16px;" text="📅" />
                                                             </children>
                                                         </HBox>
                                                     </graphic>
                                                     <content>
                                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                             <children>
-                                                                <VBox prefHeight="470.0" prefWidth="598.0" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                                <VBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                     <children>
                                                                         <HBox spacing="10.0">
                                                                             <children>
-                                                                                <TextField fx:id="authorYearSearchField" prefHeight="40.0" promptText="Cerca per autore..." style="-fx-background-radius: 20; -fx-padding: 0 15;" HBox.hgrow="ALWAYS">
+                                                                                <TextField fx:id="authorYearSearchField" minHeight="40.0" promptText="Cerca per autore..." style="-fx-background-radius: 20; -fx-padding: 0 15;" HBox.hgrow="ALWAYS">
                                                                                     <HBox.margin>
                                                                                         <Insets />
                                                                                     </HBox.margin>
                                                                                 </TextField>
-                                                                                <TextField fx:id="yearSearchField" prefHeight="40.0" prefWidth="120.0" promptText="Anno..." style="-fx-background-radius: 20; -fx-padding: 0 15;">
+                                                                                <TextField fx:id="yearSearchField" minHeight="40.0" minWidth="120.0" promptText="Anno..." style="-fx-background-radius: 20; -fx-padding: 0 15;">
                                                                                     <HBox.margin>
                                                                                         <Insets />
                                                                                     </HBox.margin>
                                                                                 </TextField>
-                                                                                <Button fx:id="authorYearSearchButton" mnemonicParsing="false" onAction="#handleAuthorYearSearch" prefHeight="40.0" prefWidth="100.0" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Cerca">
+                                                                                <Button fx:id="authorYearSearchButton" maxHeight="1.7976931348623157E308" minHeight="40.0" minWidth="100.0" mnemonicParsing="false" onAction="#handleAuthorYearSearch" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Cerca">
                                                                                     <effect>
                                                                                         <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
                                                                                     </effect>
@@ -201,7 +202,7 @@
                                                                                 <Insets />
                                                                             </VBox.margin>
                                                                         </HBox>
-                                                                        <ScrollPane fitToWidth="true" prefHeight="420.0" style="-fx-background: transparent; -fx-background-color: transparent;" VBox.vgrow="ALWAYS">
+                                                                        <ScrollPane fitToWidth="true" style="-fx-background: transparent; -fx-background-color: transparent;" VBox.vgrow="ALWAYS">
                                                                             <content>
                                                                                 <VBox fx:id="authorYearResultsContainer" spacing="10.0">
                                                                                     <!-- I risultati della ricerca per autore e anno verranno aggiunti qui dinamicamente -->
@@ -226,7 +227,7 @@
                                 </VBox>
 
                                 <!-- Pannello destro - Libri selezionati -->
-                                <VBox prefHeight="550.0" prefWidth="350.0" style="-fx-border-color: #EEEEEE; -fx-border-radius: 8; -fx-background-color: #fafafa; -fx-background-radius: 8;">
+                                <VBox maxWidth="350.0" minWidth="250.0" prefWidth="300.0" style="-fx-border-color: #EEEEEE; -fx-border-radius: 8; -fx-background-color: #fafafa; -fx-background-radius: 8;">
                                     <effect>
                                         <DropShadow color="#00000026" height="10.0" radius="4.5" width="10.0" />
                                     </effect>
@@ -241,11 +242,11 @@
                                                 <Insets bottom="10.0" />
                                             </VBox.margin>
                                         </Label>
-                                        <ListView fx:id="selectedBooksListView" prefHeight="420.0" prefWidth="330.0" style="-fx-background-radius: 5;" VBox.vgrow="ALWAYS" />
+                                        <ListView fx:id="selectedBooksListView" style="-fx-background-radius: 5;" VBox.vgrow="ALWAYS" />
                                         <!-- Bottone Cancella Tutti centrato -->
                                         <HBox alignment="CENTER" spacing="10.0">
                                             <children>
-                                                <Button fx:id="clearAllButton" mnemonicParsing="false" onAction="#handleClearAll" prefHeight="40.0" prefWidth="160.0" style="-fx-background-color: #9E9E9E; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Cancella Tutti">
+                                                <Button fx:id="clearAllButton" maxWidth="1.7976931348623157E308" minHeight="40.0" mnemonicParsing="false" onAction="#handleClearAll" style="-fx-background-color: #9E9E9E; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Cancella Tutti" HBox.hgrow="ALWAYS">
                                                     <effect>
                                                         <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
                                                     </effect>
@@ -274,7 +275,7 @@
 
                         <HBox alignment="CENTER" spacing="20.0">
                             <children>
-                                <Button fx:id="saveButton" mnemonicParsing="false" onAction="#handleSave" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Salva Libreria">
+                                <Button fx:id="saveButton" maxWidth="1.7976931348623157E308" minHeight="40.0" minWidth="150.0" mnemonicParsing="false" onAction="#handleSave" style="-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Salva Libreria" HBox.hgrow="ALWAYS">
                                     <effect>
                                         <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
                                     </effect>
@@ -282,7 +283,7 @@
                                         <Insets bottom="8.0" left="15.0" right="15.0" top="8.0" />
                                     </padding>
                                 </Button>
-                                <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#handleCancel" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #4054B2; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Annulla">
+                                <Button fx:id="cancelButton" maxWidth="1.7976931348623157E308" minHeight="40.0" minWidth="150.0" mnemonicParsing="false" onAction="#handleCancel" style="-fx-background-color: #4054B2; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Annulla" HBox.hgrow="ALWAYS">
                                     <effect>
                                         <DropShadow color="#00000080" height="4.0" radius="1.5" width="4.0" />
                                     </effect>

@@ -11,22 +11,30 @@ import javafx.stage.Stage;
  */
 public class Homepage extends Application {
 
-    // Dimensioni standard per tutte le pagine dell'applicazione
-    public static final double APP_WIDTH = 800.0;
-    public static final double APP_HEIGHT = 600.0;
+    // Dimensioni iniziali per la finestra dell'applicazione
+    public static final double INITIAL_WIDTH = 800.0;
+    public static final double INITIAL_HEIGHT = 600.0;
+
+    // Dimensioni minime per la finestra dell'applicazione
+    public static final double MIN_WIDTH = 600.0;
+    public static final double MIN_HEIGHT = 400.0;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         // Carica la pagina principale
         Parent root = FXMLLoader.load(getClass().getResource("/book_recommender/lab_b/homepage.fxml"));
 
-        // Imposta titolo e scena con dimensioni fisse
+        // Imposta titolo e scena con dimensioni iniziali
         primaryStage.setTitle("Book Recommender");
-        Scene scene = new Scene(root, APP_WIDTH, APP_HEIGHT);
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
         primaryStage.setScene(scene);
 
-        // Impedisce il ridimensionamento manuale della finestra
-        primaryStage.setResizable(false);
+        // Imposta le dimensioni minime della finestra
+        primaryStage.setMinWidth(MIN_WIDTH);
+        primaryStage.setMinHeight(MIN_HEIGHT);
+
+        // Permette il ridimensionamento della finestra
+        primaryStage.setResizable(true);
 
         // Mostra la finestra
         primaryStage.show();
