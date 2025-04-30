@@ -9,197 +9,201 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Controller per la funzionalità di consiglio libri.
- * Questo controller gestisce l'interfaccia utente per consigliare libri in base a un libro selezionato.
+ * Questo controller gestisce l'interfaccia utente per consigliare libri in base a un libro selezionato,
+ * con un limite massimo di 3 libri consigliabili.
  */
 public class RecommendBookController {
 
-    @FXML
-    private Label userIdLabel;
+    // Componenti dell'interfaccia utente
+    @FXML private Label userIdLabel;
+    @FXML private Label selectedBookLabel;
+    @FXML private ListView<String> recommendedBooksListView;
+    @FXML private Label recommendationsCountLabel;
+    @FXML private Label errorLabel;
 
-    @FXML
-    private Label selectedBookLabel;
+    // Pulsanti
+    @FXML private Button saveButton;
+    @FXML private Button removeSelectedButton;
+    @FXML private Button clearAllButton;
+    @FXML private Button backButton;
+    @FXML private Button cancelButton;
 
-    @FXML
-    private ListView<String> recommendedBooksListView;
+    // Campi di ricerca
+    @FXML private TextField titleSearchField;
+    @FXML private TextField authorSearchField;
+    @FXML private TextField authorYearSearchField;
+    @FXML private TextField yearSearchField;
 
-    @FXML
-    private Label recommendationsCountLabel;
+    // Pulsanti di ricerca
+    @FXML private Button titleSearchButton;
+    @FXML private Button authorSearchButton;
+    @FXML private Button authorYearSearchButton;
 
-    @FXML
-    private Label errorLabel;
+    // Contenitori per i risultati della ricerca
+    @FXML private VBox titleResultsContainer;
+    @FXML private VBox authorResultsContainer;
+    @FXML private VBox authorYearResultsContainer;
 
-    @FXML
-    private Button saveButton;
-
-    @FXML
-    private Button removeSelectedButton;
-
-    @FXML
-    private Button clearAllButton;
-
-    @FXML
-    private TextField titleSearchField;
-
-    @FXML
-    private TextField authorSearchField;
-
-    @FXML
-    private TextField authorYearSearchField;
-
-    @FXML
-    private TextField yearSearchField;
-
-    @FXML
-    private VBox titleResultsContainer;
-
-    @FXML
-    private VBox authorResultsContainer;
-
-    @FXML
-    private VBox authorYearResultsContainer;
-
+    // Variabili di stato
     private String userId;
     private String selectedBook;
     private String libraryName;
     private List<String> recommendedBooks = new ArrayList<>();
-    private List<Book> allBooks = new ArrayList<>();
+    private List<Book> searchResults = new ArrayList<>();
 
-    // Classe interna per rappresentare un libro
-    private static class Book {
-        private String title;
-        private String author;
-        private int year;
+    // Percorso del file CSV per i consigli
 
-        public Book(String title, String author, int year) {
-            this.title = title;
-            this.author = author;
-            this.year = year;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public String getAuthor() {
-            return author;
-        }
-
-        public int getYear() {
-            return year;
-        }
-
-        @Override
-        public String toString() {
-            return title + " - " + author + " (" + year + ")";
-        }
-
-        public boolean matchesTitle(String searchTerm) {
-            return title.toLowerCase().contains(searchTerm.toLowerCase());
-        }
-
-        public boolean matchesAuthor(String searchTerm) {
-            return author.toLowerCase().contains(searchTerm.toLowerCase());
-        }
-
-        public boolean matchesAuthorAndYear(String authorTerm, int year) {
-            return author.toLowerCase().contains(authorTerm.toLowerCase()) && this.year == year;
-        }
-    }
+    private static final String RECOMMENDATIONS_FILE_PATH_DATI = "data/ConsigliLibri.dati.csv";
 
     /**
      * Inizializza il controller.
-     * Questo metodo viene chiamato automaticamente da JavaFX dopo che l'FXML è stato caricato.
      */
     public void initialize() {
-        // Nasconde i messaggi di errore all'inizio
+        // Nasconde eventuali messaggi di errore
         errorLabel.setVisible(false);
 
-        // Carica tutti i libri disponibili dal file CSV
-        loadAllBooks();
+        // Carica tutti i libri disponibili
+        BookService.loadBooks();
 
-        // Inizializza il conteggio delle raccomandazioni
+        // Configura gli handler per il tasto Invio nei campi di ricerca
+        setupEnterKeyHandlers();
+
+        // Configura la ListView per mostrare i libri consigliati
+        setupRecommendedBooksListView();
+
+        // Il bottone saveButton è sempre attivo
+        saveButton.setDisable(false);
+
+        // Aggiorna il conteggio delle raccomandazioni
         updateRecommendationsCount();
 
-        // Rendi visibile il pulsante di salvataggio
-        saveButton.setVisible(true);
+        // Aggiorna lo stato del bottone clearAllButton
+        updateClearAllButtonState();
 
-        // Imposta gli eventi per i listener del pulsante Enter nei campi di ricerca
-        titleSearchField.setOnAction(event -> handleTitleSearch(event));
-        authorSearchField.setOnAction(event -> handleAuthorSearch(event));
-        yearSearchField.setOnAction(event -> handleAuthorYearSearch(event));
-        authorYearSearchField.setOnAction(event -> handleAuthorYearSearch(event));
-
-        // Personalizza la ListView per i libri consigliati
-        setupRecommendedBooksListView();
+        // Imposta il colore rosso per il pulsante "Cancella Tutti"
+        clearAllButton.setStyle("-fx-background-color: #ff4136; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;");
     }
 
     /**
-     * Configura la ListView per mostrare i libri consigliati con un pulsante X per rimuoverli,
-     * con un aspetto simile a quello dell'aggiunta libri a libreria
+     * Aggiorna lo stato del pulsante ClearAll in base alla presenza di libri selezionati.
      */
-    private void setupRecommendedBooksListView() {
-        recommendedBooksListView.setCellFactory(listView -> new ListCell<String>() {
-            private final Button deleteButton = new Button("X");
-            private final HBox hbox = new HBox();
-            private final Label label = new Label("");
+    private void updateClearAllButtonState() {
+        boolean hasRecommendedBooks = !recommendedBooks.isEmpty();
+        clearAllButton.setDisable(!hasRecommendedBooks);
+    }
 
-            {
-                hbox.setAlignment(Pos.CENTER_LEFT);
-                hbox.setSpacing(10);
-                hbox.setPadding(new Insets(5));
-
-                // Stilizza il pulsante X con lo stile dell'altra schermata
-                deleteButton.setStyle("-fx-background-color: #ff4136; -fx-text-fill: white; -fx-font-weight: bold; -fx-min-width: 25px; -fx-min-height: 25px; -fx-max-width: 25px; -fx-max-height: 25px; -fx-background-radius: 50%;");
-
-                // Configura il layout
-                Region spacer = new Region();
-                HBox.setHgrow(spacer, Priority.ALWAYS);
-                label.setWrapText(true);
-                label.setMaxWidth(Double.MAX_VALUE);
-                HBox.setHgrow(label, Priority.ALWAYS);
-
-                hbox.getChildren().addAll(label, spacer, deleteButton);
-
-                // Aggiungi l'azione al pulsante di rimozione
-                deleteButton.setOnAction(event -> {
-                    String item = getItem();
-                    recommendedBooks.remove(item);
-                    recommendedBooksListView.getItems().remove(item);
-                    updateRecommendationsCount();
-                });
+    /**
+     * Configura gli handler per il tasto Invio nei campi di ricerca.
+     */
+    private void setupEnterKeyHandlers() {
+        titleSearchField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                handleTitleSearch(new ActionEvent());
             }
+        });
 
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                } else {
-                    label.setText(item);
-                    setGraphic(hbox);
-                }
+        authorSearchField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                handleAuthorSearch(new ActionEvent());
+            }
+        });
+
+        authorYearSearchField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                handleAuthorYearSearch(new ActionEvent());
+            }
+        });
+
+        yearSearchField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                handleAuthorYearSearch(new ActionEvent());
             }
         });
     }
 
     /**
-     * Imposta i dati necessari (userId, libro selezionato e libreria).
-     * Questo metodo deve essere chiamato dopo il caricamento del controller.
+     * Configura la ListView per i libri consigliati.
+     */
+    private void setupRecommendedBooksListView() {
+        recommendedBooksListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        // Aggiungi un listener per aggiornare lo stato dei pulsanti quando cambia la selezione
+        recommendedBooksListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            updateClearAllButtonState();
+        });
+
+        // Modifica la visualizzazione delle celle per mostrare meglio i titoli dei libri
+        recommendedBooksListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
+            @Override
+            public ListCell<String> call(ListView<String> param) {
+                ListCell<String> cell = new ListCell<String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText(null);
+                            setGraphic(null);
+                        } else {
+                            // Creiamo un contenitore orizzontale per l'elemento e il pulsante
+                            HBox container = new HBox(10);
+                            container.setAlignment(Pos.CENTER_LEFT);
+
+                            // Etichetta per il titolo del libro con wrapping
+                            Label titleLabel = new Label(item);
+                            titleLabel.setWrapText(true);
+                            titleLabel.setMaxWidth(280);
+                            HBox.setHgrow(titleLabel, Priority.ALWAYS);
+
+                            // Pulsante ❌ per rimuovere l'elemento
+                            Button deleteButton = new Button("❌");
+                            deleteButton.setStyle(
+                                    "-fx-background-color: transparent; " +  // Sfondo trasparente
+                                            "-fx-text-fill: #FF0000; " +     // Testo (❌) rosso
+                                            "-fx-font-weight: bold; " +
+                                            "-fx-cursor: hand;"
+                            );
+                            deleteButton.setOnAction(event -> {
+                                recommendedBooks.remove(item);
+                                updateSelectedBooksList();
+                                updateRecommendationsCount();
+                                updateClearAllButtonState();
+                                updateSearchResults();
+                            });
+
+                            container.getChildren().addAll(titleLabel, deleteButton);
+                            setGraphic(container);
+                            setText(null);
+                        }
+                    }
+                };
+
+                // Aggiungiamo un po' di padding alla cella
+                cell.setPadding(new Insets(5, 0, 5, 5));
+                return cell;
+            }
+        });
+    }
+
+    /**
+     * Imposta i dati necessari per il controller.
      *
      * @param userId ID dell'utente
      * @param selectedBook libro selezionato per cui si stanno facendo raccomandazioni
@@ -218,151 +222,16 @@ public class RecommendBookController {
     }
 
     /**
-     * Carica tutti i libri disponibili.
-     * Utilizza il metodo diretto di lettura del CSV con parsing più robusto.
-     */
-    private void loadAllBooks() {
-        allBooks.clear();
-        errorLabel.setVisible(false);
-
-        // Modifica il percorso del file CSV
-        String csvFilePath = "data/Data.csv";
-        File csvFile = new File(csvFilePath);
-
-        if (!csvFile.exists()) {
-            // Prova a creare la directory se non esiste
-            File dataDir = new File("data");
-            if (!dataDir.exists()) {
-                dataDir.mkdirs();
-            }
-
-            // Se il file non esiste, aggiungi direttamente alcuni libri di esempio
-
-            return;
-        }
-
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
-            String line;
-            // Salta la prima riga che contiene intestazioni
-            br.readLine();
-
-            while ((line = br.readLine()) != null) {
-                try {
-                    // Utilizziamo un parsing più robusto per gestire le virgolette e le virgole
-                    String[] parts = parseCsvLine(line);
-
-                    if (parts.length >= 3) {
-                        String title = parts[0].trim();
-                        String author = parts[1].trim();
-
-                        // Parsing dell'anno con gestione degli errori
-                        int year = 0;
-                        try {
-                            // Estrai solo la parte numerica dell'anno
-                            String yearStr = parts[2].trim().replaceAll("[^0-9]", "");
-                            if (!yearStr.isEmpty()) {
-                                year = Integer.parseInt(yearStr);
-                            }
-                        } catch (NumberFormatException e) {
-                            System.err.println("Impossibile convertire l'anno per il libro: " + title);
-                            // Se non riusciamo a convertire l'anno, impostiamo un valore di default
-                            year = 0;
-                        }
-
-                        // Aggiungi il libro alla lista
-                        allBooks.add(new Book(title, author, year));
-                    }
-                } catch (Exception e) {
-                    // Ignora le righe che causano errori e continua con la prossima
-                    System.err.println("Errore durante il parsing della riga: " + line);
-                    System.err.println("Dettaglio errore: " + e.getMessage());
-                }
-            }
-
-
-            // Se non ci sono libri, aggiungi alcuni esempi di libri predefiniti
-            if (allBooks.isEmpty()) {
-
-            }
-
-        } catch (IOException e) {
-            System.err.println("Errore durante la lettura del file CSV: " + e.getMessage());
-            e.printStackTrace();
-            errorLabel.setText("Errore: Impossibile caricare i libri. " + e.getMessage());
-            errorLabel.setVisible(true);
-
-
-        }
-    }
-
-    /**
-     * Aggiunge libri di esempio alla lista
-     */
-
-
-    /**
-     * Effettua il parsing di una riga CSV tenendo conto delle virgolette.
-     * @param line La riga da analizzare
-     * @return Array di stringhe con i valori
-     */
-    private String[] parseCsvLine(String line) {
-        List<String> result = new ArrayList<>();
-        StringBuilder currentStr = new StringBuilder();
-        boolean inQuotes = false;
-
-        for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-
-            if (c == '"') {
-                // Inverti lo stato delle virgolette
-                inQuotes = !inQuotes;
-            } else if (c == ',' && !inQuotes) {
-                // Se troviamo una virgola e non siamo tra virgolette, è un separatore
-                result.add(currentStr.toString());
-                currentStr = new StringBuilder();
-            } else {
-                // Altrimenti aggiungiamo il carattere corrente
-                currentStr.append(c);
-            }
-        }
-
-        // Aggiungi l'ultimo campo
-        result.add(currentStr.toString());
-
-        return result.toArray(new String[0]);
-    }
-
-    /**
-     * Carica le raccomandazioni esistenti dal file CSV.
+     * Carica le raccomandazioni esistenti per il libro selezionato.
      */
     private void loadExistingRecommendations() {
-        String csvFilePath = "data/consiglilibri.csv";
         recommendedBooks.clear();
         recommendedBooksListView.getItems().clear();
 
-        File file = new File(csvFilePath);
-        if (!file.exists()) {
-            try {
-                // Crea la directory se non esiste
-                File dataDir = new File("data");
-                if (!dataDir.exists()) {
-                    dataDir.mkdirs();
-                }
+        File file = new File(RECOMMENDATIONS_FILE_PATH_DATI);
 
-                // Crea il file se non esiste
-                file.createNewFile();
-                // Aggiungi l'intestazione
-                FileWriter fw = new FileWriter(file);
-                fw.write("utente,libro,consigliato1,consigliato2,consigliato3\n");
-                fw.close();
-            } catch (IOException e) {
-                System.err.println("Errore durante la creazione del file consiglilibri.csv: " + e.getMessage());
-                e.printStackTrace();
-            }
-            return;
-        }
 
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(RECOMMENDATIONS_FILE_PATH_DATI))) {
             String line;
             // Salta la prima riga che contiene intestazioni
             boolean firstLine = true;
@@ -385,19 +254,17 @@ public class RecommendBookController {
                 }
             }
 
-            // Popola la ListView con i libri consigliati trovati
-            if (!recommendedBooks.isEmpty()) {
-                recommendedBooksListView.getItems().addAll(recommendedBooks);
-            }
+            // Aggiorna la ListView con i libri consigliati trovati
+            updateSelectedBooksList();
 
             // Aggiorna il conteggio
             updateRecommendationsCount();
 
+            // Aggiorna lo stato del pulsante clearAllButton
+            updateClearAllButtonState();
+
         } catch (IOException e) {
-            System.err.println("Errore durante la lettura del file consiglilibri.csv: " + e.getMessage());
-            e.printStackTrace();
-            errorLabel.setText("Errore: " + e.getMessage());
-            errorLabel.setVisible(true);
+
         }
     }
 
@@ -416,19 +283,22 @@ public class RecommendBookController {
         errorLabel.setVisible(false);
         titleResultsContainer.getChildren().clear();
 
-        List<Book> results = new ArrayList<>();
-        for (Book book : allBooks) {
-            if (book.matchesTitle(searchTerm) && !book.getTitle().equals(selectedBook)) {
-                results.add(book);
-            }
-        }
+        // Cerca i libri per titolo
+        searchResults = BookService.searchBooksByTitle(searchTerm);
 
-        if (results.isEmpty()) {
+        // Filtra i risultati per escludere il libro selezionato
+        searchResults.removeIf(book -> book.getTitle().equals(selectedBook));
+
+        if (searchResults.isEmpty()) {
             Label noResultsLabel = new Label("Nessun risultato trovato.");
-            noResultsLabel.setStyle("-fx-text-fill: #555555;");
+            noResultsLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #777777; -fx-padding: 20px;");
             titleResultsContainer.getChildren().add(noResultsLabel);
         } else {
-            displaySearchResults(titleResultsContainer, results);
+            // Visualizza i risultati
+            for (Book book : searchResults) {
+                HBox bookBox = createBookResultBox(book);
+                titleResultsContainer.getChildren().add(bookBox);
+            }
         }
     }
 
@@ -447,19 +317,22 @@ public class RecommendBookController {
         errorLabel.setVisible(false);
         authorResultsContainer.getChildren().clear();
 
-        List<Book> results = new ArrayList<>();
-        for (Book book : allBooks) {
-            if (book.matchesAuthor(searchTerm) && !book.getTitle().equals(selectedBook)) {
-                results.add(book);
-            }
-        }
+        // Cerca i libri per autore
+        searchResults = BookService.searchBooksByAuthor(searchTerm);
 
-        if (results.isEmpty()) {
+        // Filtra i risultati per escludere il libro selezionato
+        searchResults.removeIf(book -> book.getTitle().equals(selectedBook));
+
+        if (searchResults.isEmpty()) {
             Label noResultsLabel = new Label("Nessun risultato trovato.");
-            noResultsLabel.setStyle("-fx-text-fill: #555555;");
+            noResultsLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #777777; -fx-padding: 20px;");
             authorResultsContainer.getChildren().add(noResultsLabel);
         } else {
-            displaySearchResults(authorResultsContainer, results);
+            // Visualizza i risultati
+            for (Book book : searchResults) {
+                HBox bookBox = createBookResultBox(book);
+                authorResultsContainer.getChildren().add(bookBox);
+            }
         }
     }
 
@@ -489,96 +362,165 @@ public class RecommendBookController {
         errorLabel.setVisible(false);
         authorYearResultsContainer.getChildren().clear();
 
-        List<Book> results = new ArrayList<>();
-        for (Book book : allBooks) {
-            if (book.matchesAuthorAndYear(authorTerm, year) && !book.getTitle().equals(selectedBook)) {
-                results.add(book);
-            }
-        }
+        // Cerca i libri per autore e anno
+        searchResults = BookService.searchBooksByAuthorAndYear(authorTerm, year);
 
-        if (results.isEmpty()) {
+        // Filtra i risultati per escludere il libro selezionato
+        searchResults.removeIf(book -> book.getTitle().equals(selectedBook));
+
+        if (searchResults.isEmpty()) {
             Label noResultsLabel = new Label("Nessun risultato trovato.");
-            noResultsLabel.setStyle("-fx-text-fill: #555555;");
+            noResultsLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #777777; -fx-padding: 20px;");
             authorYearResultsContainer.getChildren().add(noResultsLabel);
         } else {
-            displaySearchResults(authorYearResultsContainer, results);
+            // Visualizza i risultati
+            for (Book book : searchResults) {
+                HBox bookBox = createBookResultBox(book);
+                authorYearResultsContainer.getChildren().add(bookBox);
+            }
         }
     }
 
     /**
-     * Visualizza i risultati della ricerca in un container.
+     * Crea un box per visualizzare un libro nei risultati di ricerca.
+     *
+     * @param book Il libro da visualizzare
+     * @return Un HBox contenente le informazioni del libro e un pulsante per aggiungerlo
      */
-    private void displaySearchResults(VBox container, List<Book> books) {
-        for (Book book : books) {
-            HBox bookRow = createSearchResultRow(book);
-            container.getChildren().add(bookRow);
-        }
-    }
+    private HBox createBookResultBox(Book book) {
+        HBox bookBox = new HBox();
+        bookBox.setAlignment(Pos.CENTER_LEFT);
+        bookBox.setSpacing(10);
+        bookBox.setPadding(new Insets(10));
+        bookBox.setStyle("-fx-background-color: white; -fx-border-color: #EEEEEE; -fx-border-radius: 5px;");
 
-    /**
-     * Crea una riga di risultato ricerca simile all'interfaccia di AddBooksToLibraryController.
-     */
-    private HBox createSearchResultRow(Book book) {
-        HBox rowContainer = new HBox();
-        rowContainer.setPadding(new Insets(10));
-        rowContainer.setStyle("-fx-background-color: white; -fx-border-color: #DDDDDD; -fx-border-radius: 5;");
-        rowContainer.setAlignment(Pos.CENTER_LEFT);
+        // Informazioni del libro in un contenitore
+        VBox infoBox = new VBox(5);
+        infoBox.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(infoBox, Priority.ALWAYS);
 
-        // Contenitore principale per le informazioni del libro (occupa tutto lo spazio disponibile)
-        VBox bookInfoContainer = new VBox();
-        bookInfoContainer.setSpacing(5);
-        HBox.setHgrow(bookInfoContainer, Priority.ALWAYS);
-
-        // Titolo del libro
+        // Titolo del libro più grande e in evidenza
         Label titleLabel = new Label(book.getTitle());
-        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;");
         titleLabel.setWrapText(true);
+        titleLabel.setMaxWidth(480); // Imposta una larghezza massima per evitare troncamenti
 
-        // Informazioni sulla categoria, editore e anno
-        String categoriaInfo = "Categoria: Fiction | Editore: " + book.getAuthor() + " | Anno: " + book.getYear();
-        Label infoLabel = new Label(categoriaInfo);
-        infoLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #555555;");
-        infoLabel.setWrapText(true);
+        // Autore del libro
+        Label authorLabel = new Label("Autore: " + book.getAuthors());
+        authorLabel.setStyle("-fx-font-size: 14px;");
+        authorLabel.setWrapText(true);
 
-        bookInfoContainer.getChildren().addAll(titleLabel, infoLabel);
+        // Dettagli del libro su una riga
+        Label detailsLabel = new Label("Categoria: " + book.getCategory() + " | Editore: " + book.getPublisher() + " | Anno: " + book.getPublishYear());
+        detailsLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #777777;");
+        detailsLabel.setWrapText(true);
 
-        // Pulsante di aggiunta sul lato destro
+        // Aggiungi le etichette al contenitore delle informazioni
+        infoBox.getChildren().addAll(titleLabel, authorLabel, detailsLabel);
+
+        // Pulsante per aggiungere o rimuovere il libro
         Button actionButton = new Button();
-        actionButton.setPrefHeight(30);
+        actionButton.setPrefHeight(40);  // Aumentata l'altezza del pulsante
+        actionButton.setPrefWidth(100);  // Impostata una larghezza fissa per il pulsante
+        actionButton.setMinWidth(100);   // Larghezza minima per garantire che la scritta sia visibile
 
-        // Se il libro è già nei consigliati o abbiamo raggiunto il limite, mostra "Rimuovi" (disabilitato)
-        if (recommendedBooks.contains(book.getTitle())) {
+        // Controlla se il libro è già consigliato o se abbiamo raggiunto il limite
+        boolean isRecommended = recommendedBooks.contains(book.getTitle());
+        boolean isLimitReached = recommendedBooks.size() >= 3 && !isRecommended;
+
+        if (isRecommended) {
+            // Il libro è già nella lista dei consigliati
             actionButton.setText("Rimuovi");
-            actionButton.setStyle("-fx-background-color: #FF4136; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 15;");
-            actionButton.setDisable(true);
-        } else if (recommendedBooks.size() >= 3) {
-            actionButton.setText("Aggiungi");
-            actionButton.setStyle("-fx-background-color: #75B965; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 15;");
-            actionButton.setDisable(true);
-        } else {
-            actionButton.setText("Aggiungi");
-            actionButton.setStyle("-fx-background-color: #75B965; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 15;");
+            actionButton.setStyle("-fx-background-color: red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 10px 15px; -fx-cursor: hand;");
 
-            actionButton.setOnAction(event -> {
-                if (recommendedBooks.size() < 3 && !recommendedBooks.contains(book.getTitle())) {
-                    recommendedBooks.add(book.getTitle());
-                    recommendedBooksListView.getItems().add(book.getTitle());
-                    updateRecommendationsCount();
+            // Imposta l'azione per rimuovere il libro
+            actionButton.setOnAction(e -> toggleBookSelection(book.getTitle(), actionButton));
+        } else if (isLimitReached) {
+            // Abbiamo raggiunto il limite di 3 libri
+            actionButton.setText("Aggiungi");
+            actionButton.setStyle("-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 10px 15px; -fx-cursor: hand;");
 
-                    // Cambia il pulsante dopo l'aggiunta
-                    actionButton.setText("Rimuovi");
-                    actionButton.setStyle("-fx-background-color: #FF4136; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 15;");
-                    actionButton.setDisable(true);
-                }
+            // Se si tenta di aggiungere un quarto libro, mostra un alert
+            actionButton.setOnAction(e -> {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Limite raggiunto");
+                alert.setHeaderText("Limite massimo di libri");
+                alert.setContentText("Puoi consigliare al massimo 3 libri. Rimuovi un libro prima di aggiungerne un altro.");
+                alert.showAndWait();
             });
+        } else {
+            // Possiamo ancora aggiungere libri
+            actionButton.setText("Aggiungi");
+            actionButton.setStyle("-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-padding: 10px 15px; -fx-cursor: hand;");
+
+            // Imposta l'azione per aggiungere il libro
+            actionButton.setOnAction(e -> toggleBookSelection(book.getTitle(), actionButton));
         }
 
         // Aggiungi spazio flessibile tra le informazioni e il pulsante
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        rowContainer.getChildren().addAll(bookInfoContainer, spacer, actionButton);
-        return rowContainer;
+        bookBox.getChildren().addAll(infoBox, spacer, actionButton);
+        return bookBox;
+    }
+
+    /**
+     * Gestisce la selezione/deselezione di un libro.
+     *
+     * @param bookTitle Il titolo del libro
+     * @param button Il pulsante associato al libro
+     */
+    private void toggleBookSelection(String bookTitle, Button button) {
+        // Controlla se il libro è già selezionato
+        if (recommendedBooks.contains(bookTitle)) {
+            // Rimuovi il libro dalla selezione
+            recommendedBooks.remove(bookTitle);
+            updateSelectedBooksList();
+            button.setText("Aggiungi");
+            button.setStyle("-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
+        } else {
+            // Verifica che non si sia già raggiunto il limite di 3 libri
+            if (recommendedBooks.size() >= 3) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Limite raggiunto");
+                alert.setHeaderText("Limite massimo di libri");
+                alert.setContentText("Puoi consigliare al massimo 3 libri. Rimuovi un libro prima di aggiungerne un altro.");
+                alert.showAndWait();
+                return;
+            }
+
+            // Aggiungi il libro alla selezione
+            recommendedBooks.add(bookTitle);
+            updateSelectedBooksList();
+            button.setText("Rimuovi");
+            button.setStyle("-fx-background-color: red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
+        }
+
+        // Aggiorna il contatore dei libri selezionati
+        updateRecommendationsCount();
+
+        // Aggiorna lo stato del pulsante clearAllButton
+        updateClearAllButtonState();
+
+        // Aggiorna i risultati di ricerca per riflettere il nuovo stato
+        updateSearchResults();
+
+        // Nascondi eventuali messaggi di errore
+        errorLabel.setVisible(false);
+    }
+
+    /**
+     * Aggiorna la lista dei libri consigliati.
+     */
+    private void updateSelectedBooksList() {
+        // Pulisci la ListView
+        recommendedBooksListView.getItems().clear();
+
+        // Aggiungi i libri selezionati
+        List<String> sortedBooks = new ArrayList<>(recommendedBooks);
+        Collections.sort(sortedBooks);
+        recommendedBooksListView.getItems().addAll(sortedBooks);
     }
 
     /**
@@ -589,19 +531,59 @@ public class RecommendBookController {
     }
 
     /**
-     * Gestisce la rimozione di un libro selezionato dalla lista dei consigli.
+     * Aggiorna i pulsanti nei risultati di ricerca in base ai libri attualmente consigliati.
+     */
+    private void updateSearchResults() {
+        // Determina quale contenitore aggiornare in base ai risultati visibili
+        if (!titleResultsContainer.getChildren().isEmpty()) {
+            titleResultsContainer.getChildren().clear();
+            handleTitleSearch(new ActionEvent());
+        }
+
+        if (!authorResultsContainer.getChildren().isEmpty()) {
+            authorResultsContainer.getChildren().clear();
+            handleAuthorSearch(new ActionEvent());
+        }
+
+        if (!authorYearResultsContainer.getChildren().isEmpty()) {
+            authorYearResultsContainer.getChildren().clear();
+            handleAuthorYearSearch(new ActionEvent());
+        }
+    }
+
+    /**
+     * Gestisce la rimozione di libri selezionati dalla ListView.
      */
     @FXML
     public void handleRemoveSelected(ActionEvent event) {
-        String selectedItem = recommendedBooksListView.getSelectionModel().getSelectedItem();
-        if (selectedItem != null) {
-            recommendedBooks.remove(selectedItem);
-            recommendedBooksListView.getItems().remove(selectedItem);
-            updateRecommendationsCount();
-        } else {
+        // Ottieni i libri selezionati nella ListView
+        List<String> selectedItems = new ArrayList<>(recommendedBooksListView.getSelectionModel().getSelectedItems());
+
+        if (selectedItems.isEmpty()) {
             errorLabel.setText("Seleziona un libro da rimuovere.");
             errorLabel.setVisible(true);
+            return;
         }
+
+        // Rimuovi i libri selezionati
+        for (String book : selectedItems) {
+            recommendedBooks.remove(book);
+        }
+
+        // Aggiorna la lista dei libri selezionati
+        updateSelectedBooksList();
+
+        // Aggiorna il contatore
+        updateRecommendationsCount();
+
+        // Aggiorna lo stato del pulsante clearAllButton
+        updateClearAllButtonState();
+
+        // Aggiorna i pulsanti nei risultati di ricerca
+        updateSearchResults();
+
+        // Nascondi eventuali messaggi di errore
+        errorLabel.setVisible(false);
     }
 
     /**
@@ -609,9 +591,27 @@ public class RecommendBookController {
      */
     @FXML
     public void handleClearAll(ActionEvent event) {
+        if (recommendedBooks.isEmpty()) {
+            return;
+        }
+
+        // Cancella tutti i libri selezionati
         recommendedBooks.clear();
-        recommendedBooksListView.getItems().clear();
+
+        // Aggiorna la lista dei libri selezionati
+        updateSelectedBooksList();
+
+        // Aggiorna il contatore
         updateRecommendationsCount();
+
+        // Aggiorna lo stato del pulsante clearAllButton
+        updateClearAllButtonState();
+
+        // Aggiorna i pulsanti nei risultati di ricerca
+        updateSearchResults();
+
+        // Nascondi eventuali messaggi di errore
+        errorLabel.setVisible(false);
     }
 
     /**
@@ -645,7 +645,7 @@ public class RecommendBookController {
             return; // Esci dalla funzione senza salvare
         }
 
-        // Se ci sono libri consigliati, continua con il salvataggio
+        // Se ci sono libri consigliati, salva i consigli
         if (saveRecommendations()) {
             // Mostra un messaggio di successo
             errorLabel.setText("Consigli salvati con successo!");
@@ -655,13 +655,26 @@ public class RecommendBookController {
     }
 
     /**
-     * Salva le raccomandazioni nel file CSV.
+     * Salva le raccomandazioni nei file CSV.
      * @return true se il salvataggio è avvenuto con successo, false altrimenti
      */
     private boolean saveRecommendations() {
-        String csvFilePath = "data/consiglilibri.csv";
-        File file = new File(csvFilePath);
+        boolean success = true;
 
+
+        // Salva  sul file ConsigliLibri.dati.csv (formato alternativo con spazi)
+        success = saveRecommendationsToFile(RECOMMENDATIONS_FILE_PATH_DATI, " ") && success;
+
+        return success;
+    }
+
+    /**
+     * Salva le raccomandazioni in un file CSV specificato.
+     * @param filePath percorso del file
+     * @param separator separatore dei campi (virgola o spazio)
+     * @return true se il salvataggio è avvenuto con successo, false altrimenti
+     */
+    private boolean saveRecommendationsToFile(String filePath, String separator) {
         try {
             // Crea la directory se non esiste
             File dataDir = new File("data");
@@ -669,25 +682,44 @@ public class RecommendBookController {
                 dataDir.mkdirs();
             }
 
-            // Leggi il file per vedere se esiste già una riga per questo utente e libro
+            // Leggi il file per verificare se esistono già consigli per questo utente e libro
             List<String> lines = new ArrayList<>();
             boolean found = false;
+            File file = new File(filePath);
 
             if (file.exists()) {
-                try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
+                try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
                     String line;
+                    // Leggi la prima riga (intestazione)
+                    String header = br.readLine();
+                    if (header != null) {
+                        lines.add(header);
+                    } else {
+                        // File vuoto, aggiungi intestazione appropriata
+                        if (separator.equals(",")) {
+                            lines.add("utente,libro,consigliato1,consigliato2,consigliato3");
+                        } else {
+                            lines.add("utente libro consigliato1 consigliato2 consigliato3");
+                        }
+                    }
+
                     while ((line = br.readLine()) != null) {
-                        String[] data = line.split(",");
+                        String[] data = line.split(separator.equals(",") ? "," : "\\s+");
                         if (data.length >= 2 && data[0].trim().equals(userId.trim()) && data[1].trim().equals(selectedBook.trim())) {
                             // Sostituisci questa riga con i nuovi dati
                             StringBuilder sb = new StringBuilder();
-                            sb.append(userId).append(",").append(selectedBook);
+                            sb.append(userId).append(separator).append(selectedBook);
 
                             // Aggiungi i libri consigliati (massimo 3)
                             for (int i = 0; i < 3; i++) {
-                                sb.append(",");
+                                sb.append(separator);
                                 if (i < recommendedBooks.size()) {
-                                    sb.append(recommendedBooks.get(i));
+                                    // Se il separatore è spazio, sostituisci gli spazi nei titoli con underscore
+                                    String bookTitle = recommendedBooks.get(i);
+                                    if (separator.equals(" ")) {
+                                        bookTitle = bookTitle.replace(" ", "_");
+                                    }
+                                    sb.append(bookTitle);
                                 } else {
                                     sb.append("null");
                                 }
@@ -702,19 +734,28 @@ public class RecommendBookController {
                 }
             } else {
                 // Il file non esiste, aggiungi l'intestazione
-                lines.add("utente,libro,consigliato1,consigliato2,consigliato3");
+                if (separator.equals(",")) {
+                    lines.add("utente,libro,consigliato1,consigliato2,consigliato3");
+                } else {
+                    lines.add("utente libro consigliato1 consigliato2 consigliato3");
+                }
             }
 
             // Se non è stata trovata una riga per questo utente e libro, aggiungila
             if (!found) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(userId).append(",").append(selectedBook);
+                sb.append(userId).append(separator).append(selectedBook);
 
                 // Aggiungi i libri consigliati (massimo 3)
                 for (int i = 0; i < 3; i++) {
-                    sb.append(",");
+                    sb.append(separator);
                     if (i < recommendedBooks.size()) {
-                        sb.append(recommendedBooks.get(i));
+                        // Se il separatore è spazio, sostituisci gli spazi nei titoli con underscore
+                        String bookTitle = recommendedBooks.get(i);
+                        if (separator.equals(" ")) {
+                            bookTitle = bookTitle.replace(" ", "_");
+                        }
+                        sb.append(bookTitle);
                     } else {
                         sb.append("null");
                     }
@@ -724,11 +765,11 @@ public class RecommendBookController {
             }
 
             // Scrivi tutte le righe nel file
-            Files.write(Paths.get(csvFilePath), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(Paths.get(filePath), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
             return true;
         } catch (IOException e) {
-            System.err.println("Errore durante il salvataggio nel file consiglilibri.csv: " + e.getMessage());
+            System.err.println("Errore durante il salvataggio nel file " + filePath + ": " + e.getMessage());
             e.printStackTrace();
             errorLabel.setText("Errore: " + e.getMessage());
             errorLabel.setVisible(true);
@@ -806,5 +847,4 @@ public class RecommendBookController {
             errorLabel.setText("Errore: " + e.getMessage());
             errorLabel.setVisible(true);
         }
-    }
-}
+    }}
