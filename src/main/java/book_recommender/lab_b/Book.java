@@ -4,6 +4,8 @@ package book_recommender.lab_b;
  * Classe che rappresenta un'entità libro all'interno dell'applicazione.
  * Contiene tutti i metadati relativi a un libro e supporta diverse modalità di costruzione.
  */
+
+/// prooaegjjanebj < <j vjadbnagaegbab
 public class Book {
     private int id;  // ID univoco nel database
     private String title;
