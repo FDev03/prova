@@ -12,15 +12,12 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -66,22 +63,24 @@ public class RecommendBookController {
     private String userId;
     private String selectedBook;
     private String libraryName;
+    private int selectedBookId;
     private List<String> recommendedBooks = new ArrayList<>();
     private List<Book> searchResults = new ArrayList<>();
 
-    // Percorso del file CSV per i consigli
-
-    private static final String RECOMMENDATIONS_FILE_PATH_DATI = "data/ConsigliLibri.dati.csv";
+    private DatabaseManager dbManager;
 
     /**
      * Inizializza il controller.
      */
     public void initialize() {
+        try {
+            dbManager = DatabaseManager.getInstance();
+        } catch (SQLException e) {
+            System.err.println("Error initializing database connection: " + e.getMessage());
+        }
+
         // Nasconde eventuali messaggi di errore
         errorLabel.setVisible(false);
-
-        // Carica tutti i libri disponibili
-        BookService.loadBooks();
 
         // Configura gli handler per il tasto Invio nei campi di ricerca
         setupEnterKeyHandlers();
@@ -217,6 +216,20 @@ public class RecommendBookController {
         userIdLabel.setText(userId);
         selectedBookLabel.setText("Libro selezionato: " + selectedBook);
 
+        // Get the book ID from the database
+        try (Connection conn = dbManager.getConnection()) {
+            String sql = "SELECT id FROM books WHERE title = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, selectedBook);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    this.selectedBookId = rs.getInt("id");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting book ID: " + e.getMessage());
+        }
+
         // Controlla se ci sono già raccomandazioni per questo libro
         loadExistingRecommendations();
     }
@@ -228,44 +241,32 @@ public class RecommendBookController {
         recommendedBooks.clear();
         recommendedBooksListView.getItems().clear();
 
-        File file = new File(RECOMMENDATIONS_FILE_PATH_DATI);
+        try (Connection conn = dbManager.getConnection()) {
+            String sql = "SELECT b.title FROM books b " +
+                    "JOIN book_recommendations br ON b.id = br.recommended_book_id " +
+                    "WHERE br.user_id = ? AND br.source_book_id = ?";
 
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, userId);
+                pstmt.setInt(2, selectedBookId);
+                ResultSet rs = pstmt.executeQuery();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(RECOMMENDATIONS_FILE_PATH_DATI))) {
-            String line;
-            // Salta la prima riga che contiene intestazioni
-            boolean firstLine = true;
-
-            while ((line = br.readLine()) != null) {
-                if (firstLine) {
-                    firstLine = false;
-                    continue;
-                }
-
-                String[] data = line.split(",");
-                if (data.length >= 5 && data[0].trim().equals(userId.trim()) && data[1].trim().equals(selectedBook.trim())) {
-                    // Aggiungi i libri consigliati alla lista
-                    for (int i = 2; i < 5; i++) {
-                        if (data[i] != null && !data[i].trim().isEmpty() && !data[i].equals("null")) {
-                            recommendedBooks.add(data[i].trim());
-                        }
-                    }
-                    break;
+                while (rs.next()) {
+                    recommendedBooks.add(rs.getString("title"));
                 }
             }
-
-            // Aggiorna la ListView con i libri consigliati trovati
-            updateSelectedBooksList();
-
-            // Aggiorna il conteggio
-            updateRecommendationsCount();
-
-            // Aggiorna lo stato del pulsante clearAllButton
-            updateClearAllButtonState();
-
-        } catch (IOException e) {
-
+        } catch (SQLException e) {
+            System.err.println("Error loading recommendations: " + e.getMessage());
         }
+
+        // Aggiorna la ListView con i libri consigliati trovati
+        updateSelectedBooksList();
+
+        // Aggiorna il conteggio
+        updateRecommendationsCount();
+
+        // Aggiorna lo stato del bottone clearAllButton
+        updateClearAllButtonState();
     }
 
     /**
@@ -457,11 +458,7 @@ public class RecommendBookController {
             actionButton.setOnAction(e -> toggleBookSelection(book.getTitle(), actionButton));
         }
 
-        // Aggiungi spazio flessibile tra le informazioni e il pulsante
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        bookBox.getChildren().addAll(infoBox, spacer, actionButton);
+        bookBox.getChildren().addAll(infoBox, actionButton);
         return bookBox;
     }
 
@@ -552,41 +549,6 @@ public class RecommendBookController {
     }
 
     /**
-     * Gestisce la rimozione di libri selezionati dalla ListView.
-     */
-    @FXML
-    public void handleRemoveSelected(ActionEvent event) {
-        // Ottieni i libri selezionati nella ListView
-        List<String> selectedItems = new ArrayList<>(recommendedBooksListView.getSelectionModel().getSelectedItems());
-
-        if (selectedItems.isEmpty()) {
-            errorLabel.setText("Seleziona un libro da rimuovere.");
-            errorLabel.setVisible(true);
-            return;
-        }
-
-        // Rimuovi i libri selezionati
-        for (String book : selectedItems) {
-            recommendedBooks.remove(book);
-        }
-
-        // Aggiorna la lista dei libri selezionati
-        updateSelectedBooksList();
-
-        // Aggiorna il contatore
-        updateRecommendationsCount();
-
-        // Aggiorna lo stato del pulsante clearAllButton
-        updateClearAllButtonState();
-
-        // Aggiorna i pulsanti nei risultati di ricerca
-        updateSearchResults();
-
-        // Nascondi eventuali messaggi di errore
-        errorLabel.setVisible(false);
-    }
-
-    /**
      * Gestisce la cancellazione di tutti i libri consigliati.
      */
     @FXML
@@ -655,126 +617,90 @@ public class RecommendBookController {
     }
 
     /**
-     * Salva le raccomandazioni nei file CSV.
+     * Salva le raccomandazioni nel database.
      * @return true se il salvataggio è avvenuto con successo, false altrimenti
      */
     private boolean saveRecommendations() {
-        boolean success = true;
+        try (Connection conn = dbManager.getConnection()) {
+            conn.setAutoCommit(false);
 
+            try {
+                // First, delete existing recommendations for this book
+                String deleteSql = "DELETE FROM book_recommendations WHERE user_id = ? AND source_book_id = ?";
+                try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
+                    pstmt.setString(1, userId);
+                    pstmt.setInt(2, selectedBookId);
+                    pstmt.executeUpdate();
+                }
 
-        // Salva  sul file ConsigliLibri.dati.csv (formato alternativo con spazi)
-        success = saveRecommendationsToFile(RECOMMENDATIONS_FILE_PATH_DATI, " ") && success;
+                // Then, insert new recommendations
+                String insertSql = "INSERT INTO book_recommendations (user_id, source_book_id, recommended_book_id) VALUES (?, ?, ?)";
+                String findBookSql = "SELECT id FROM books WHERE title = ?";
 
-        return success;
-    }
+                try (PreparedStatement findBookStmt = conn.prepareStatement(findBookSql);
+                     PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
 
-    /**
-     * Salva le raccomandazioni in un file CSV specificato.
-     * @param filePath percorso del file
-     * @param separator separatore dei campi (virgola o spazio)
-     * @return true se il salvataggio è avvenuto con successo, false altrimenti
-     */
-    private boolean saveRecommendationsToFile(String filePath, String separator) {
-        try {
-            // Crea la directory se non esiste
-            File dataDir = new File("data");
-            if (!dataDir.exists()) {
-                dataDir.mkdirs();
-            }
+                    for (String recommendedBookTitle : recommendedBooks) {
+                        findBookStmt.setString(1, recommendedBookTitle);
+                        ResultSet rs = findBookStmt.executeQuery();
 
-            // Leggi il file per verificare se esistono già consigli per questo utente e libro
-            List<String> lines = new ArrayList<>();
-            boolean found = false;
-            File file = new File(filePath);
-
-            if (file.exists()) {
-                try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-                    String line;
-                    // Leggi la prima riga (intestazione)
-                    String header = br.readLine();
-                    if (header != null) {
-                        lines.add(header);
-                    } else {
-                        // File vuoto, aggiungi intestazione appropriata
-                        if (separator.equals(",")) {
-                            lines.add("utente,libro,consigliato1,consigliato2,consigliato3");
-                        } else {
-                            lines.add("utente libro consigliato1 consigliato2 consigliato3");
-                        }
-                    }
-
-                    while ((line = br.readLine()) != null) {
-                        String[] data = line.split(separator.equals(",") ? "," : "\\s+");
-                        if (data.length >= 2 && data[0].trim().equals(userId.trim()) && data[1].trim().equals(selectedBook.trim())) {
-                            // Sostituisci questa riga con i nuovi dati
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(userId).append(separator).append(selectedBook);
-
-                            // Aggiungi i libri consigliati (massimo 3)
-                            for (int i = 0; i < 3; i++) {
-                                sb.append(separator);
-                                if (i < recommendedBooks.size()) {
-                                    // Se il separatore è spazio, sostituisci gli spazi nei titoli con underscore
-                                    String bookTitle = recommendedBooks.get(i);
-                                    if (separator.equals(" ")) {
-                                        bookTitle = bookTitle.replace(" ", "_");
-                                    }
-                                    sb.append(bookTitle);
-                                } else {
-                                    sb.append("null");
-                                }
-                            }
-
-                            lines.add(sb.toString());
-                            found = true;
-                        } else {
-                            lines.add(line);
+                        if (rs.next()) {
+                            int recommendedBookId = rs.getInt("id");
+                            insertStmt.setString(1, userId);
+                            insertStmt.setInt(2, selectedBookId);
+                            insertStmt.setInt(3, recommendedBookId);
+                            insertStmt.executeUpdate();
                         }
                     }
                 }
-            } else {
-                // Il file non esiste, aggiungi l'intestazione
-                if (separator.equals(",")) {
-                    lines.add("utente,libro,consigliato1,consigliato2,consigliato3");
-                } else {
-                    lines.add("utente libro consigliato1 consigliato2 consigliato3");
-                }
+
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
-
-            // Se non è stata trovata una riga per questo utente e libro, aggiungila
-            if (!found) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(userId).append(separator).append(selectedBook);
-
-                // Aggiungi i libri consigliati (massimo 3)
-                for (int i = 0; i < 3; i++) {
-                    sb.append(separator);
-                    if (i < recommendedBooks.size()) {
-                        // Se il separatore è spazio, sostituisci gli spazi nei titoli con underscore
-                        String bookTitle = recommendedBooks.get(i);
-                        if (separator.equals(" ")) {
-                            bookTitle = bookTitle.replace(" ", "_");
-                        }
-                        sb.append(bookTitle);
-                    } else {
-                        sb.append("null");
-                    }
-                }
-
-                lines.add(sb.toString());
-            }
-
-            // Scrivi tutte le righe nel file
-            Files.write(Paths.get(filePath), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-
-            return true;
-        } catch (IOException e) {
-            System.err.println("Errore durante il salvataggio nel file " + filePath + ": " + e.getMessage());
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("Error saving recommendations: " + e.getMessage());
             errorLabel.setText("Errore: " + e.getMessage());
             errorLabel.setVisible(true);
             return false;
         }
+    }
+
+    /**
+     * Gestisce la rimozione di libri selezionati dalla ListView.
+     */
+    @FXML
+    public void handleRemoveSelected(ActionEvent event) {
+        // Ottieni i libri selezionati nella ListView
+        List<String> selectedItems = new ArrayList<>(recommendedBooksListView.getSelectionModel().getSelectedItems());
+
+        if (selectedItems.isEmpty()) {
+            errorLabel.setText("Seleziona un libro da rimuovere.");
+            errorLabel.setVisible(true);
+            return;
+        }
+
+        // Rimuovi i libri selezionati
+        for (String book : selectedItems) {
+            recommendedBooks.remove(book);
+        }
+
+        // Aggiorna la lista dei libri selezionati
+        updateSelectedBooksList();
+
+        // Aggiorna il contatore
+        updateRecommendationsCount();
+
+        // Aggiorna lo stato del pulsante clearAllButton
+        updateClearAllButtonState();
+
+        // Aggiorna i pulsanti nei risultati di ricerca
+        updateSearchResults();
+
+        // Nascondi eventuali messaggi di errore
+        errorLabel.setVisible(false);
     }
 
     /**
@@ -820,6 +746,7 @@ public class RecommendBookController {
             errorLabel.setVisible(true);
         }
     }
+
 
     /**
      * Naviga al menu utente.

@@ -16,10 +16,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,67 +31,28 @@ import java.util.ResourceBundle;
  */
 public class BookDetailsController implements Initializable {
 
-    @FXML
-    private Label bookTitleLabel;
-
-    @FXML
-    private Label authorsLabel;
-
-    @FXML
-    private Label categoryLabel;
-
-    @FXML
-    private Label publisherLabel;
-
-    @FXML
-    private Label yearLabel;
-
-    @FXML
-    private Label styleRatingLabel;
-
-    @FXML
-    private Label contentRatingLabel;
-
-    @FXML
-    private Label pleasantnessRatingLabel;
-
-    @FXML
-    private Label originalityRatingLabel;
-
-    @FXML
-    private Label editionRatingLabel;
-
-    @FXML
-    private Label totalRatingLabel;
-
-    @FXML
-    private Label usersCountLabel;
-
-    @FXML
-    private Label generalCommentsLabel;
-
-    @FXML
-    private Label recommendedBooksLabel;
-
-
-    @FXML
-    private Button backButton;
+    @FXML private Label bookTitleLabel;
+    @FXML private Label authorsLabel;
+    @FXML private Label categoryLabel;
+    @FXML private Label publisherLabel;
+    @FXML private Label yearLabel;
+    @FXML private Label styleRatingLabel;
+    @FXML private Label contentRatingLabel;
+    @FXML private Label pleasantnessRatingLabel;
+    @FXML private Label originalityRatingLabel;
+    @FXML private Label editionRatingLabel;
+    @FXML private Label totalRatingLabel;
+    @FXML private Label usersCountLabel;
+    @FXML private Label generalCommentsLabel;
+    @FXML private Label recommendedBooksLabel;
+    @FXML private Button backButton;
 
     // Container per le recensioni per ogni categoria
-    @FXML
-    private VBox styleReviewsBox;
-
-    @FXML
-    private VBox contentReviewsBox;
-
-    @FXML
-    private VBox pleasantnessReviewsBox;
-
-    @FXML
-    private VBox originalityReviewsBox;
-
-    @FXML
-    private VBox editionReviewsBox;
+    @FXML private VBox styleReviewsBox;
+    @FXML private VBox contentReviewsBox;
+    @FXML private VBox pleasantnessReviewsBox;
+    @FXML private VBox originalityReviewsBox;
+    @FXML private VBox editionReviewsBox;
 
     // Riferimenti alle stelle per le valutazioni
     @FXML private Text styleStar1, styleStar2, styleStar3, styleStar4, styleStar5;
@@ -102,49 +62,14 @@ public class BookDetailsController implements Initializable {
     @FXML private Text editionStar1, editionStar2, editionStar3, editionStar4, editionStar5;
     @FXML private Text totalStar1, totalStar2, totalStar3, totalStar4, totalStar5;
 
-    // File CSV contenente i libri
-    private static final String BOOKS_FILE_PATH = "data/Libri.csv";
-    // File CSV alternativo contenente i libri (da usare se il primo non contiene il libro)
-    private static final String DATA_FILE_PATH = "data/Data.csv";
-    // File CSV contenente le valutazioni
-    private static final String RATINGS_FILE_PATH = "data/ValutazioniLibri.csv";
-    // File CSV contenente i consigli personalizzati di libri
-    private static final String RECOMMENDATIONS_FILE_PATH = "data/ConsigliLibri.dati.csv";
-
     // Mappa dei colori assegnati a ciascun utente
     private Map<String, String> userColors = new HashMap<>();
     private String[] colorPalette = {
-            "#e74c3c", // Rosso
-            "#3498db", // Blu
-            "#2ecc71", // Verde
-            "#f39c12", // Arancione
-            "#9b59b6", // Viola
-            "#1abc9c", // Turchese
-            "#d35400", // Arancione scuro
-            "#27ae60", // Verde scuro
-            "#2980b9", // Blu scuro
-            "#8e44ad", // Viola scuro
-            "#f1c40f", // Giallo
-            "#16a085", // Turchese scuro
-            "#2c3e50", // Blu notte
-            "#f39c12", // Arancione chiaro
-            "#e67e22", // Arancione chiaro scuro
-            "#95a5a6", // Grigio chiaro
-            "#bdc3c7", // Grigio
-            "#7f8c8d", // Grigio scuro
-            "#34495e", // Blu acciaio
-            "#d5dbdb", // Grigio chiaro pastello
-            "#9a59b6", // Viola chiaro
-            "#f5b041", // Giallo aranciato
-            "#58d68d", // Verde chiaro
-            "#5dade2", // Blu cielo
-            "#f1948a", // Rosa chiaro
-            "#d6eaf8", // Blu pallido
-            "#f7b7a3", // Rosa tenue
-            "#e8daef", // Lilla chiaro
-            "#c39bd3"  // Lilla
+            "#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c", "#d35400",
+            "#27ae60", "#2980b9", "#8e44ad", "#f1c40f", "#16a085", "#2c3e50", "#f39c12",
+            "#e67e22", "#95a5a6", "#bdc3c7", "#7f8c8d", "#34495e", "#d5dbdb", "#9a59b6",
+            "#f5b041", "#58d68d", "#5dade2", "#f1948a", "#d6eaf8", "#f7b7a3", "#e8daef", "#c39bd3"
     };
-
 
     // Struttura per memorizzare recensioni
     private class Review {
@@ -159,6 +84,28 @@ public class BookDetailsController implements Initializable {
         }
     }
 
+    // Struttura per memorizzare i commenti generali
+    private class Comment {
+        public String userId;
+        public String text;
+
+        public Comment(String userId, String text) {
+            this.userId = userId;
+            this.text = text;
+        }
+    }
+
+    // Struttura per memorizzare i libri consigliati
+    private class RecommendedBook {
+        public String userId;
+        public String bookTitle;
+
+        public RecommendedBook(String userId, String bookTitle) {
+            this.userId = userId;
+            this.bookTitle = bookTitle;
+        }
+    }
+
     // Liste per memorizzare le recensioni per ogni caratteristica
     private List<Review> styleReviews = new ArrayList<>();
     private List<Review> contentReviews = new ArrayList<>();
@@ -168,6 +115,7 @@ public class BookDetailsController implements Initializable {
 
     // Dati del libro corrente
     private Book currentBook;
+    private int currentBookId;
 
     // Mappa per memorizzare le valutazioni del libro
     private Map<String, Double> ratings = new HashMap<>();
@@ -175,12 +123,15 @@ public class BookDetailsController implements Initializable {
     // Numero di utenti che hanno valutato il libro
     private int numRaters = 0;
 
-    /**
-     * Inizializza il controller.
-     */
+    private DatabaseManager dbManager;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Inizializzazione degli elementi dell'interfaccia
+        try {
+            dbManager = DatabaseManager.getInstance();
+        } catch (SQLException e) {
+            System.err.println("Error initializing database connection: " + e.getMessage());
+        }
 
         // Inizializza i container delle recensioni
         styleReviewsBox.setSpacing(10);
@@ -190,50 +141,28 @@ public class BookDetailsController implements Initializable {
         editionReviewsBox.setSpacing(10);
     }
 
-    /**
-     * Imposta i dati del libro da visualizzare.
-     *
-     * @param bookTitle il titolo del libro da visualizzare
-     */
     public void setBookData(String bookTitle) {
-        // Cerca il libro per titolo nel file CSV
+        // Cerca il libro nel database
         this.currentBook = findBookByTitle(bookTitle);
 
         if (currentBook != null) {
             // Carica le valutazioni e le recensioni del libro
-            loadRatingsAndReviews(currentBook.getTitle());
+            loadRatingsAndReviews(currentBookId);
 
             // Popola l'interfaccia con i dati del libro
             updateUI();
         } else {
-            // Libro non trovato, prova con il file Data.csv
-            this.currentBook = findBookInDataFile(bookTitle);
+            // Crea un libro di esempio se non trovato
+            this.currentBook = createExampleBook(bookTitle);
 
-            if (currentBook != null) {
-                // Carica le valutazioni e le recensioni del libro
-                loadRatingsAndReviews(currentBook.getTitle());
+            // Utilizza valutazioni di esempio
+            setupExampleRatings();
 
-                // Popola l'interfaccia con i dati del libro
-                updateUI();
-            } else {
-                // Crea un libro di esempio se non trovato
-                this.currentBook = createExampleBook(bookTitle);
-
-                // Utilizza valutazioni di esempio
-                setupExampleRatings();
-
-                // Popola l'interfaccia con i dati del libro di esempio
-                updateUI();
-
-                // Libro non trovato
-                System.err.println("Libro non trovato in nessun file: " + bookTitle);
-            }
+            // Popola l'interfaccia con i dati del libro di esempio
+            updateUI();
         }
     }
 
-    /**
-     * Crea un libro di esempio quando non è possibile trovarlo nei file.
-     */
     private Book createExampleBook(String title) {
         return new Book(
                 title,
@@ -244,9 +173,6 @@ public class BookDetailsController implements Initializable {
         );
     }
 
-    /**
-     * Imposta valutazioni a zero quando non è possibile trovare quelle reali.
-     */
     private void setupExampleRatings() {
         ratings.put("style", 0.0);
         ratings.put("content", 0.0);
@@ -264,76 +190,33 @@ public class BookDetailsController implements Initializable {
         editionReviews.clear();
     }
 
-    /**
-     * Cerca un libro per titolo nel file Libri.csv.
-     *
-     * @param title il titolo del libro da cercare
-     * @return il libro trovato o null se non trovato
-     */
     private Book findBookByTitle(String title) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(BOOKS_FILE_PATH))) {
-            String line;
-            // Salta l'intestazione (prima riga)
-            reader.readLine();
+        try (Connection conn = dbManager.getConnection()) {
+            String sql = "SELECT id, title, authors, category, publisher, publish_year FROM books WHERE title = ?";
 
-            while ((line = reader.readLine()) != null) {
-                String[] fields = BookService.parseCsvLine(line);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, title);
+                ResultSet rs = pstmt.executeQuery();
 
-                if (fields.length >= 5) {
-                    Book book = new Book(fields);
-
-                    // Confronta ignorando maiuscole/minuscole
-                    if (book.getTitle().trim().equalsIgnoreCase(title.trim())) {
-                        return book;
-                    }
+                if (rs.next()) {
+                    this.currentBookId = rs.getInt("id");
+                    return new Book(
+                            rs.getString("title"),
+                            rs.getString("authors"),
+                            rs.getString("category"),
+                            rs.getString("publisher"),
+                            rs.getInt("publish_year")
+                    );
                 }
             }
-        } catch (IOException e) {
-            System.err.println("Errore nella lettura del file Libri.csv: " + e.getMessage());
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("Error finding book: " + e.getMessage());
         }
 
         return null;
     }
 
-    /**
-     * Cerca un libro per titolo nel file Data.csv (backup).
-     *
-     * @param title il titolo del libro da cercare
-     * @return il libro trovato o null se non trovato
-     */
-    private Book findBookInDataFile(String title) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(DATA_FILE_PATH))) {
-            String line;
-            // Salta l'intestazione (prima riga)
-            reader.readLine();
-
-            while ((line = reader.readLine()) != null) {
-                String[] fields = BookService.parseCsvLine(line);
-
-                if (fields.length >= 5) {
-                    Book book = new Book(fields);
-
-                    // Confronto esatto per titoli (solo case insensitive)
-                    if (book.getTitle().trim().equalsIgnoreCase(title.trim())) {
-                        return book;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Errore nella lettura del file Data.csv: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    /**
-     * Carica le valutazioni e le recensioni per il libro specifico.
-     *
-     * @param bookTitle il titolo del libro di cui caricare le valutazioni
-     */
-    private void loadRatingsAndReviews(String bookTitle) {
+    private void loadRatingsAndReviews(int bookId) {
         // Inizializza le valutazioni con valori predefiniti
         ratings.put("style", 0.0);
         ratings.put("content", 0.0);
@@ -349,118 +232,107 @@ public class BookDetailsController implements Initializable {
         originalityReviews.clear();
         editionReviews.clear();
 
-        try {
-            // Controlla se esiste il file delle valutazioni
-            BufferedReader reader = new BufferedReader(new FileReader(RATINGS_FILE_PATH));
-            String line;
-            int count = 0;
-            double styleSum = 0, contentSum = 0, pleasantnessSum = 0, originalitySum = 0, editionSum = 0;
-            int colorIndex = 0;
+        try (Connection conn = dbManager.getConnection()) {
+            // Query per ottenere tutte le valutazioni per questo libro
+            String sql = "SELECT user_id, style_rating, content_rating, pleasantness_rating, " +
+                    "originality_rating, edition_rating, general_comment, style_comment, " +
+                    "content_comment, pleasantness_comment, originality_comment, edition_comment " +
+                    "FROM book_ratings WHERE book_id = ?";
 
-            // Salta l'intestazione
-            reader.readLine();
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, bookId);
+                ResultSet rs = pstmt.executeQuery();
 
-            while ((line = reader.readLine()) != null) {
-                String[] fields = BookService.parseCsvLine(line);
+                int count = 0;
+                double styleSum = 0, contentSum = 0, pleasantnessSum = 0, originalitySum = 0, editionSum = 0;
+                int colorIndex = 0;
 
-                // Verifica che ci siano abbastanza campi e che il titolo corrisponda esattamente
-                if (fields.length >= 8 && fields[1].trim().equalsIgnoreCase(bookTitle.trim())) {
-                    try {
-                        // Estrai informazioni dell'utente e valutazioni
-                        String userId = fields[0].trim();
-                        int style = Integer.parseInt(fields[2].trim());
-                        int content = Integer.parseInt(fields[3].trim());
-                        int pleasantness = Integer.parseInt(fields[4].trim());
-                        int originality = Integer.parseInt(fields[5].trim());
-                        int edition = Integer.parseInt(fields[6].trim());
+                while (rs.next()) {
+                    String userId = rs.getString("user_id");
+                    int style = rs.getInt("style_rating");
+                    int content = rs.getInt("content_rating");
+                    int pleasantness = rs.getInt("pleasantness_rating");
+                    int originality = rs.getInt("originality_rating");
+                    int edition = rs.getInt("edition_rating");
 
-                        // Assegna un colore all'utente se non ne ha già uno
-                        if (!userColors.containsKey(userId)) {
-                            userColors.put(userId, colorPalette[colorIndex % colorPalette.length]);
-                            colorIndex++;
-                        }
+                    // Assegna un colore all'utente se non ne ha già uno
+                    if (!userColors.containsKey(userId)) {
+                        userColors.put(userId, colorPalette[colorIndex % colorPalette.length]);
+                        colorIndex++;
+                    }
 
-                        // Somma le valutazioni per il calcolo della media
-                        styleSum += style;
-                        contentSum += content;
-                        pleasantnessSum += pleasantness;
-                        originalitySum += originality;
-                        editionSum += edition;
-                        count++;
+                    // Somma le valutazioni per il calcolo della media
+                    styleSum += style;
+                    contentSum += content;
+                    pleasantnessSum += pleasantness;
+                    originalitySum += originality;
+                    editionSum += edition;
+                    count++;
 
-                        // Aggiungi recensioni specifiche se disponibili (campi 9-13)
-                        if (fields.length >= 9) {
-                            String generalReview = fields[8].trim();
+                    // Aggiungi recensioni specifiche se disponibili
+                    String generalComment = rs.getString("general_comment");
+                    String styleComment = rs.getString("style_comment");
+                    String contentComment = rs.getString("content_comment");
+                    String pleasantnessComment = rs.getString("pleasantness_comment");
+                    String originalityComment = rs.getString("originality_comment");
+                    String editionComment = rs.getString("edition_comment");
 
-                            if (fields.length >= 10 && !fields[9].trim().isEmpty()) {
-                                styleReviews.add(new Review(userId, style, fields[9].trim()));
-                            } else if (!generalReview.isEmpty()) {
-                                styleReviews.add(new Review(userId, style, generalReview));
-                            }
+                    if (styleComment != null && !styleComment.isEmpty()) {
+                        styleReviews.add(new Review(userId, style, styleComment));
+                    } else if (generalComment != null && !generalComment.isEmpty()) {
+                        styleReviews.add(new Review(userId, style, generalComment));
+                    }
 
-                            if (fields.length >= 11 && !fields[10].trim().isEmpty()) {
-                                contentReviews.add(new Review(userId, content, fields[10].trim()));
-                            } else if (!generalReview.isEmpty()) {
-                                contentReviews.add(new Review(userId, content, generalReview));
-                            }
+                    if (contentComment != null && !contentComment.isEmpty()) {
+                        contentReviews.add(new Review(userId, content, contentComment));
+                    } else if (generalComment != null && !generalComment.isEmpty()) {
+                        contentReviews.add(new Review(userId, content, generalComment));
+                    }
 
-                            if (fields.length >= 12 && !fields[11].trim().isEmpty()) {
-                                pleasantnessReviews.add(new Review(userId, pleasantness, fields[11].trim()));
-                            } else if (!generalReview.isEmpty()) {
-                                pleasantnessReviews.add(new Review(userId, pleasantness, generalReview));
-                            }
+                    if (pleasantnessComment != null && !pleasantnessComment.isEmpty()) {
+                        pleasantnessReviews.add(new Review(userId, pleasantness, pleasantnessComment));
+                    } else if (generalComment != null && !generalComment.isEmpty()) {
+                        pleasantnessReviews.add(new Review(userId, pleasantness, generalComment));
+                    }
 
-                            if (fields.length >= 13 && !fields[12].trim().isEmpty()) {
-                                originalityReviews.add(new Review(userId, originality, fields[12].trim()));
-                            } else if (!generalReview.isEmpty()) {
-                                originalityReviews.add(new Review(userId, originality, generalReview));
-                            }
+                    if (originalityComment != null && !originalityComment.isEmpty()) {
+                        originalityReviews.add(new Review(userId, originality, originalityComment));
+                    } else if (generalComment != null && !generalComment.isEmpty()) {
+                        originalityReviews.add(new Review(userId, originality, generalComment));
+                    }
 
-                            if (fields.length >= 14 && !fields[13].trim().isEmpty()) {
-                                editionReviews.add(new Review(userId, edition, fields[13].trim()));
-                            } else if (!generalReview.isEmpty()) {
-                                editionReviews.add(new Review(userId, edition, generalReview));
-                            }
-                        }
-                    } catch (NumberFormatException e) {
-                        System.err.println("Errore nel formato dei dati di valutazione: " + e.getMessage());
+                    if (editionComment != null && !editionComment.isEmpty()) {
+                        editionReviews.add(new Review(userId, edition, editionComment));
+                    } else if (generalComment != null && !generalComment.isEmpty()) {
+                        editionReviews.add(new Review(userId, edition, generalComment));
                     }
                 }
+
+                // Se ci sono valutazioni, calcola la media
+                if (count > 0) {
+                    ratings.put("style", Math.round(styleSum / count * 10) / 10.0);
+                    ratings.put("content", Math.round(contentSum / count * 10) / 10.0);
+                    ratings.put("pleasantness", Math.round(pleasantnessSum / count * 10) / 10.0);
+                    ratings.put("originality", Math.round(originalitySum / count * 10) / 10.0);
+                    ratings.put("edition", Math.round(editionSum / count * 10) / 10.0);
+
+                    // Calcola la media totale
+                    double total = (styleSum + contentSum + pleasantnessSum + originalitySum + editionSum) / (5 * count);
+                    ratings.put("total", Math.round(total * 10) / 10.0);
+
+                    // Aggiorna il numero di valutatori
+                    numRaters = count;
+                } else {
+                    // Se non ci sono valutazioni, imposta tutto a 0
+                    setupExampleRatings();
+                }
             }
-
-            reader.close();
-
-            // Se ci sono valutazioni, calcola la media
-            if (count > 0) {
-                ratings.put("style", Math.round(styleSum / count * 10) / 10.0);
-                ratings.put("content", Math.round(contentSum / count * 10) / 10.0);
-                ratings.put("pleasantness", Math.round(pleasantnessSum / count * 10) / 10.0);
-                ratings.put("originality", Math.round(originalitySum / count * 10) / 10.0);
-                ratings.put("edition", Math.round(editionSum / count * 10) / 10.0);
-
-                // Calcola la media totale
-                double total = (styleSum + contentSum + pleasantnessSum + originalitySum + editionSum) / (5 * count);
-                ratings.put("total", Math.round(total * 10) / 10.0);
-
-                // Aggiorna il numero di valutatori
-                numRaters = count;
-            } else {
-                // Se non ci sono valutazioni, imposta tutto a 0
-                setupExampleRatings();
-            }
-
-        } catch (IOException e) {
-            System.err.println("Errore nella lettura del file delle valutazioni: " + e.getMessage());
-            e.printStackTrace();
-
-            // Se c'è un errore, imposta tutte le stelle a 0
+        } catch (SQLException e) {
+            System.err.println("Error loading ratings and reviews: " + e.getMessage());
             setupExampleRatings();
         }
     }
 
-    /**
-     * Aggiorna l'interfaccia utente con i dati del libro corrente.
-     */
     private void updateUI() {
         // Imposta i dati del libro
         bookTitleLabel.setText(currentBook.getTitle());
@@ -498,9 +370,6 @@ public class BookDetailsController implements Initializable {
         generateRecommendedBooks();
     }
 
-    /**
-     * Aggiorna i container delle recensioni con i dati caricati.
-     */
     private void updateReviewContainers() {
         // Pulisci i container
         styleReviewsBox.getChildren().clear();
@@ -531,12 +400,6 @@ public class BookDetailsController implements Initializable {
         addReviewsToContainer(editionReviews, editionReviewsBox);
     }
 
-    /**
-     * Aggiunge recensioni ad un container specifico.
-     *
-     * @param reviews Lista di recensioni da aggiungere
-     * @param container Container in cui aggiungere le recensioni
-     */
     private void addReviewsToContainer(List<Review> reviews, VBox container) {
         if (reviews.isEmpty()) {
             Label noReviewsLabel = new Label("Nessuna recensione disponibile.");
@@ -582,16 +445,6 @@ public class BookDetailsController implements Initializable {
         }
     }
 
-    /**
-     * Colora le stelle in base alla valutazione.
-     *
-     * @param star1 prima stella
-     * @param star2 seconda stella
-     * @param star3 terza stella
-     * @param star4 quarta stella
-     * @param star5 quinta stella
-     * @param rating valutazione (da 0 a 5)
-     */
     private void updateStars(Text star1, Text star2, Text star3, Text star4, Text star5, double rating) {
         Color goldColor = Color.web("#ffc107");
         Color grayColor = Color.web("#dddddd");
@@ -603,9 +456,6 @@ public class BookDetailsController implements Initializable {
         star5.setFill(rating >= 5 ? goldColor : grayColor);
     }
 
-    /**
-     * Genera un commento generale basato sulle recensioni degli utenti.
-     */
     private void generateGeneralComment() {
         // Pulisci prima il container dei commenti generali
         generalCommentsLabel.setText("");
@@ -638,17 +488,17 @@ public class BookDetailsController implements Initializable {
         Label summaryLabel = new Label();
         if (numRaters > 0) {
             double totalRating = ratings.get("total");
-
+            summaryLabel.setText("Questo libro ha una valutazione media di " + totalRating + " stelle basata su " + numRaters + " valutazioni.");
         } else {
-            summaryLabel.setText("Questo libro non ha ancora ricevuto .");
+            summaryLabel.setText("Questo libro non ha ancora ricevuto valutazioni.");
         }
         summaryLabel.setWrapText(true);
         commentsContainer.getChildren().add(summaryLabel);
 
         // Aggiungi i commenti degli utenti
         if (numRaters > 0) {
-            // Recupera i commenti dal file ValutazioniLibri.csv
-            List<Comment> userComments = getUserComments(currentBook.getTitle());
+            // Recupera i commenti dal database
+            List<Comment> userComments = getUserComments(currentBookId);
 
             if (!userComments.isEmpty()) {
                 Label reviewsHeader = new Label("Recensioni degli utenti:");
@@ -679,143 +529,59 @@ public class BookDetailsController implements Initializable {
         }
     }
 
-    // Classe per rappresentare un commento generale
-    private class Comment {
-        public String userId;
-        public String text;
-
-        public Comment(String userId, String text) {
-            this.userId = userId;
-            this.text = text;
-        }
-    }
-
-    // Classe ausiliaria per memorizzare i consigli personalizzati
-    private class RecommendedBook {
-        public String userId;
-        public String bookTitle;
-
-        public RecommendedBook(String userId, String bookTitle) {
-            this.userId = userId;
-            this.bookTitle = bookTitle;
-        }
-    }
-
-    /**
-     * Recupera i commenti generali degli utenti per un libro specifico.
-     *
-     * @param bookTitle il titolo del libro
-     * @return lista di commenti
-     */
-    private List<Comment> getUserComments(String bookTitle) {
+    private List<Comment> getUserComments(int bookId) {
         List<Comment> comments = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(RATINGS_FILE_PATH))) {
-            String line;
-            // Salta l'intestazione
-            reader.readLine();
+        try (Connection conn = dbManager.getConnection()) {
+            String sql = "SELECT user_id, general_comment FROM book_ratings WHERE book_id = ? AND general_comment IS NOT NULL AND general_comment != ''";
 
-            while ((line = reader.readLine()) != null) {
-                String[] fields = BookService.parseCsvLine(line);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, bookId);
+                ResultSet rs = pstmt.executeQuery();
 
-                // Verifica che ci siano abbastanza campi e che il titolo corrisponda esattamente
-                if (fields.length >= 9 && fields[1].trim().equalsIgnoreCase(bookTitle.trim())) {
-
-                    // Estrai ID utente e recensione generale
-                    String userId = fields[0].trim();
-                    String generalReview = fields[8].trim();
-
-                    if (!generalReview.isEmpty()) {
-                        comments.add(new Comment(userId, generalReview));
-                    }
+                while (rs.next()) {
+                    String userId = rs.getString("user_id");
+                    String generalComment = rs.getString("general_comment");
+                    comments.add(new Comment(userId, generalComment));
                 }
             }
-        } catch (IOException e) {
-            System.err.println("Errore nella lettura del file delle valutazioni: " + e.getMessage());
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("Error getting user comments: " + e.getMessage());
         }
 
         return comments;
     }
 
-    /**
-     * Genera suggerimenti di libri basati sulla categoria del libro corrente.
-     */
     private void generateRecommendedBooks() {
-        // Prima cerca se esistono consigli personalizzati nel file ConsigliLibri.dati.csv
+        // Prima cerca se esistono consigli personalizzati dal database
         boolean foundCustomRecommendations = findCustomRecommendations();
 
         // Se non sono stati trovati consigli personalizzati, genera consigli basati sulla categoria
         if (!foundCustomRecommendations) {
-            // Ottieni alcuni libri della stessa categoria
-            boolean foundRecommendations = false;
-
-            // Prima prova con Libri.csv
-            foundRecommendations = findSimilarBooks(BOOKS_FILE_PATH);
-
-            // Se non sono state trovate raccomandazioni, prova con Data.csv
-            if (!foundRecommendations) {
-                foundRecommendations = findSimilarBooks(DATA_FILE_PATH);
-            }
-
-            // Se non sono state trovate raccomandazioni, nascondi l'etichetta
-            if (!foundRecommendations) {
-                recommendedBooksLabel.setText("");
-            }
+            findSimilarBooks();
         }
     }
 
-    /**
-     * Cerca consigli personalizzati nel file ConsigliLibri.dati.csv
-     * e li visualizza in box come recensioni con ID utente colorato.
-     *
-     * @return true se è stato trovato anche un solo consiglio personalizzato, false altrimenti
-     */
-    /**
-     * Cerca consigli personalizzati nel file ConsigliLibri.dati.csv
-     * e li visualizza in box come recensioni con ID utente colorato.
-     * Ora include anche l'autore del libro consigliato.
-     *
-     * @return true se è stato trovato anche un solo consiglio personalizzato, false altrimenti
-     */
     private boolean findCustomRecommendations() {
         List<RecommendedBook> customRecommendations = new ArrayList<>();
-        int colorIndex = 0;
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(RECOMMENDATIONS_FILE_PATH))) {
-            String line;
-            String firstLine = reader.readLine();
-            if (firstLine == null) {
-                return false;
-            }
+        try (Connection conn = dbManager.getConnection()) {
+            String sql = "SELECT r.user_id, b.title FROM book_recommendations r " +
+                    "JOIN books b ON r.recommended_book_id = b.id " +
+                    "WHERE r.source_book_id = ?";
 
-            // Leggi tutte le righe cercando corrispondenze con il titolo esatto
-            BufferedReader dataReader = new BufferedReader(new FileReader(RECOMMENDATIONS_FILE_PATH));
-            while ((line = dataReader.readLine()) != null) {
-                String[] fields = BookService.parseCsvLine(line);
-                if (fields.length >= 3) { // Deve avere almeno utente, libro corrente, libro consigliato
-                    String sourceBookTitle = fields[1].trim();
-                    String currentBookTitle = currentBook.getTitle().trim();
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, currentBookId);
+                ResultSet rs = pstmt.executeQuery();
 
-                    // Confronta solo con corrispondenza esatta (case insensitive)
-                    if (sourceBookTitle.equalsIgnoreCase(currentBookTitle)) {
-                        String userId = fields[0].trim();
-                        String recommendedBookTitle = fields[2].trim();
-
-                        // Assegna un colore all'utente se non ne ha già uno
-                        if (!userColors.containsKey(userId)) {
-                            userColors.put(userId, colorPalette[colorIndex % colorPalette.length]);
-                            colorIndex++;
-                        }
-
-                        customRecommendations.add(new RecommendedBook(userId, recommendedBookTitle));
-                    }
+                while (rs.next()) {
+                    String userId = rs.getString("user_id");
+                    String recommendedBookTitle = rs.getString("title");
+                    customRecommendations.add(new RecommendedBook(userId, recommendedBookTitle));
                 }
             }
-            dataReader.close();
-        } catch (IOException e) {
-            System.err.println("Errore nella lettura del file dei consigli: " + e.getMessage());
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("Error getting custom recommendations: " + e.getMessage());
         }
 
         // Se ci sono consigli personalizzati, crea box visivi per ognuno
@@ -839,11 +605,8 @@ public class BookDetailsController implements Initializable {
                 Label userLabel = new Label(recommendation.userId);
                 userLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: " + userColor + ";");
 
-                // Cerca il libro nei file per ottenere l'autore
+                // Cerca il libro nel database per ottenere l'autore
                 Book recommendedBook = findBookByTitle(recommendation.bookTitle);
-                if (recommendedBook == null) {
-                    recommendedBook = findBookInDataFile(recommendation.bookTitle);
-                }
 
                 Label bookLabel = new Label("\"" + recommendation.bookTitle + "\"");
                 bookLabel.setStyle("-fx-font-style: italic;");
@@ -876,114 +639,71 @@ public class BookDetailsController implements Initializable {
         return false;
     }
 
-    /**
-     * Cerca libri simili in un file CSV specifico e li visualizza in box colorati.
-     *
-     * @param filePath percorso del file CSV da cui cercare i libri
-     * @return true se sono stati trovati libri simili, false altrimenti
-     */
-    private boolean findSimilarBooks(String filePath) {
-        // Lista per raccogliere i libri simili
+    private void findSimilarBooks() {
         List<Book> similarBooks = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            String line;
+        try (Connection conn = dbManager.getConnection()) {
+            String sql = "SELECT title, authors, category, publisher, publish_year FROM books " +
+                    "WHERE category = ? AND id != ? LIMIT 3";
 
-            // Salta l'intestazione
-            reader.readLine();
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, currentBook.getCategory());
+                pstmt.setInt(2, currentBookId);
+                ResultSet rs = pstmt.executeQuery();
 
-            // Raccogli tutti i libri della stessa categoria
-            while ((line = reader.readLine()) != null) {
-                String[] fields = BookService.parseCsvLine(line);
-
-                if (fields.length >= 5) {
-                    Book book = new Book(fields);
-
-                    // Se è della stessa categoria ma non è lo stesso libro
-                    if (book.getCategory().equalsIgnoreCase(currentBook.getCategory()) &&
-                            !book.getTitle().equalsIgnoreCase(currentBook.getTitle())) {
-                        similarBooks.add(book);
-                    }
+                while (rs.next()) {
+                    Book book = new Book(
+                            rs.getString("title"),
+                            rs.getString("authors"),
+                            rs.getString("category"),
+                            rs.getString("publisher"),
+                            rs.getInt("publish_year")
+                    );
+                    similarBooks.add(book);
                 }
             }
-        } catch (IOException e) {
-            System.err.println("Errore nella lettura del file per le raccomandazioni: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+        } catch (SQLException e) {
+            System.err.println("Error finding similar books: " + e.getMessage());
         }
 
-        // Se non ci sono libri simili, ritorna false
-        if (similarBooks.isEmpty()) {
-            return false;
-        }
+        // Se ci sono libri simili, mostrali
+        if (!similarBooks.isEmpty()) {
+            VBox similarBooksContainer = new VBox(10);
+            similarBooksContainer.setPadding(new Insets(10));
 
-        // Prendi massimo 3 libri casuali dalla lista (o tutti se ce ne sono meno di 3)
-        int maxBooksToShow = Math.min(3, similarBooks.size());
-        Collections.shuffle(similarBooks); // Mescola la lista per prendere 3 libri casuali
+            Label headerLabel = new Label("Libri consigliati basati sulla categoria:");
+            headerLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+            similarBooksContainer.getChildren().add(headerLabel);
 
-        // Crea il container per i libri consigliati
-        VBox recommendationsContainer = new VBox(10);
-        recommendationsContainer.setPadding(new Insets(10));
+            for (Book book : similarBooks) {
+                VBox bookBox = new VBox(5);
+                bookBox.setPadding(new Insets(10));
+                bookBox.setStyle("-fx-background-color: #f8f8f8; -fx-border-color: #e0e0e0; -fx-border-radius: 5px;");
 
-        // Intestazione
-        Label headerLabel = new Label("Libri della stessa categoria:");
-        headerLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-        recommendationsContainer.getChildren().add(headerLabel);
+                Label titleLabel = new Label("\"" + book.getTitle() + "\"");
+                titleLabel.setStyle("-fx-font-weight: bold;");
+                titleLabel.setWrapText(true);
 
-        // Aggiungi i libri al container con box colorati
-        for (int i = 0; i < maxBooksToShow; i++) {
-            Book book = similarBooks.get(i);
+                Label authorLabel = new Label(book.getAuthors());
+                authorLabel.setWrapText(true);
 
-            // Crea un box per ogni libro consigliato
-            VBox bookBox = new VBox(5);
-            bookBox.setPadding(new Insets(10));
-            bookBox.setStyle("-fx-background-color:white "  +
-                    "; -fx-border-color: #e0e0e0; -fx-border-radius: 5px;");
-
-            Label titleLabel = new Label("\"" + book.getTitle() + "\"");
-            titleLabel.setStyle("-fx-font-weight: bold;");
-            titleLabel.setWrapText(true);
-
-            Label authorLabel = new Label( book.getAuthors());
-            authorLabel.setWrapText(true);
-
-            bookBox.getChildren().addAll(titleLabel, authorLabel);
-            recommendationsContainer.getChildren().add(bookBox);
-        }
-
-        // Sostituisci l'etichetta delle raccomandazioni con il container
-        if (recommendedBooksLabel.getParent() instanceof VBox) {
-            VBox parent = (VBox) recommendedBooksLabel.getParent();
-            int index = parent.getChildren().indexOf(recommendedBooksLabel);
-            if (index >= 0) {
-                parent.getChildren().set(index, recommendationsContainer);
+                bookBox.getChildren().addAll(titleLabel, authorLabel);
+                similarBooksContainer.getChildren().add(bookBox);
             }
-        }
 
-        return true;
-    }
-
-// Rimuovere questo metodo completo
-    /**
-     * Gestisce il click sul pulsante "Chiudi".
-     */
-    @FXML
-    public void handleClose(ActionEvent event) {
-        // Torna alla homepage
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/homepage.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
-
-            stage.show();
-        } catch (IOException e) {
-            System.err.println("Errore nel caricamento della homepage: " + e.getMessage());
-            e.printStackTrace();
+            // Sostituisci l'etichetta delle raccomandazioni con il container
+            if (recommendedBooksLabel.getParent() instanceof VBox) {
+                VBox parent = (VBox) recommendedBooksLabel.getParent();
+                int index = parent.getChildren().indexOf(recommendedBooksLabel);
+                if (index >= 0) {
+                    parent.getChildren().set(index, similarBooksContainer);
+                }
+            }
+        } else {
+            recommendedBooksLabel.setText("Nessun libro consigliato disponibile.");
         }
     }
+
     /**
      * Gestisce il click sul pulsante "Torna indietro".
      */
@@ -1003,4 +723,5 @@ public class BookDetailsController implements Initializable {
             System.err.println("Errore nel caricamento della homepage: " + e.getMessage());
             e.printStackTrace();
         }
-    }}
+    }
+}

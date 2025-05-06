@@ -21,6 +21,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.*;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -30,50 +31,36 @@ import java.util.ResourceBundle;
  */
 public class HomepageController implements Initializable {
 
-    @FXML
-    private Button titleTabButton;
+    @FXML private Button titleTabButton;
+    @FXML private Button authorTabButton;
+    @FXML private Button authorYearTabButton;
 
-    @FXML
-    private Button authorTabButton;
+    @FXML private VBox titlePage;
+    @FXML private VBox authorPage;
+    @FXML private VBox authorYearPage;
 
-    @FXML
-    private Button authorYearTabButton;
+    @FXML private TextField titleSearchField;
+    @FXML private TextField authorSearchField;
+    @FXML private TextField authorYearSearchField;
+    @FXML private TextField yearSearchField;
 
-    @FXML
-    private VBox titlePage;
+    @FXML private VBox bookListContainer;
+    @FXML private VBox authorBookListContainer;
+    @FXML private VBox authorYearBookListContainer;
 
-    @FXML
-    private VBox authorPage;
-
-    @FXML
-    private VBox authorYearPage;
-
-    @FXML
-    private TextField titleSearchField;
-
-    @FXML
-    private TextField authorSearchField;
-
-    @FXML
-    private TextField authorYearSearchField;
-
-    @FXML
-    private TextField yearSearchField;
-
-    @FXML
-    private VBox bookListContainer;
-
-    @FXML
-    private VBox authorBookListContainer;
-
-    @FXML
-    private VBox authorYearBookListContainer;
+    private DatabaseManager dbManager;
 
     /**
      * Metodo chiamato automaticamente dopo che FXML è stato caricato
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        try {
+            dbManager = DatabaseManager.getInstance();
+        } catch (SQLException e) {
+            System.err.println("Error initializing database connection: " + e.getMessage());
+        }
+
         // Imposta la pagina titolo come visibile di default
         if (titlePage != null) titlePage.setVisible(true);
         if (authorPage != null) authorPage.setVisible(false);
@@ -95,7 +82,6 @@ public class HomepageController implements Initializable {
      * Configura gli handler per la pressione del tasto Invio nei campi di ricerca
      */
     private void setupEnterKeyHandlers() {
-        // Gestisci la pressione del tasto Invio nel campo di ricerca per titolo
         if (titleSearchField != null) {
             titleSearchField.setOnKeyPressed(event -> {
                 if (event.getCode() == KeyCode.ENTER) {
@@ -104,7 +90,6 @@ public class HomepageController implements Initializable {
             });
         }
 
-        // Gestisci la pressione del tasto Invio nel campo di ricerca per autore
         if (authorSearchField != null) {
             authorSearchField.setOnKeyPressed(event -> {
                 if (event.getCode() == KeyCode.ENTER) {
@@ -113,7 +98,6 @@ public class HomepageController implements Initializable {
             });
         }
 
-        // Gestisci la pressione del tasto Invio nei campi di ricerca per autore e anno
         if (authorYearSearchField != null) {
             authorYearSearchField.setOnKeyPressed(event -> {
                 if (event.getCode() == KeyCode.ENTER) {
@@ -130,24 +114,23 @@ public class HomepageController implements Initializable {
             });
         }
     }
+
     /**
      * Carica i libri con la valutazione media più alta nella homepage.
-     * Include solo libri con voto medio > 0.
      */
     private void loadTopRatedBooks() {
         try {
-            // Ottieni i libri con valutazione media > 0, senza limiti sul numero
-            List<Book> topRatedBooks = BookService.getTopRatedBooksWithPositiveRating();
+            // Ottieni i libri con valutazione media più alta, limitando a 3
+            List<Book> topRatedBooks = BookService.getTopRatedBooks(3);
 
             // Pulisci i contenitori
             clearBookContainers();
 
             // Aggiungi l'intestazione "Top 3 libri per valutazione" a tutti i contenitori
             Label titleHeader = new Label("Top 3 libri per valutazione: ");
-
             titleHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
 
-           Label authorHeader = new Label("Top 3 libri per valutazione: ");
+            Label authorHeader = new Label("Top 3 libri per valutazione: ");
             authorHeader.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: red; -fx-padding: 10px 0 15px 0;");
 
             Label authorYearHeader = new Label("Top 3 libri per valutazione: ");
@@ -167,7 +150,6 @@ public class HomepageController implements Initializable {
 
             // Se non ci sono libri con valutazione positiva, mostra un messaggio
             if (topRatedBooks.isEmpty()) {
-                // Aggiungi un messaggio nei contenitori per indicare che non ci sono libri con valutazioni
                 Label noRatingsLabel = new Label("Nessun libro con valutazioni positive disponibili.");
                 noRatingsLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #555555; -fx-padding: 20px;");
 
@@ -186,18 +168,12 @@ public class HomepageController implements Initializable {
                 return;
             }
 
-            // Prendi al massimo i primi 3 libri (o meno se non ce ne sono abbastanza)
-            int booksToShow = Math.min(3, topRatedBooks.size());
-            List<Book> top3Books = topRatedBooks.subList(0, booksToShow);
-
             // Aggiungi i libri ai contenitori
-            for (Book book : top3Books) {
-                // Aggiungi il libro alla pagina dei titoli
+            for (Book book : topRatedBooks) {
                 if (bookListContainer != null) {
                     addBookToContainer(book, bookListContainer);
                 }
 
-                // Aggiungi il libro anche alle altre pagine
                 if (authorBookListContainer != null) {
                     addBookToContainer(book, authorBookListContainer);
                 }
@@ -232,14 +208,6 @@ public class HomepageController implements Initializable {
     /**
      * Aggiunge un libro al contenitore specificato con tutte le informazioni
      */
-    /**
-     * Aggiunge un libro al contenitore specificato con tutte le informazioni
-     * Pulsante Visualizza posizionato completamente a destra
-     */
-    /**
-     * Aggiunge un libro al contenitore specificato con tutte le informazioni
-     * Pulsante Visualizza separato e posizionato a destra
-     */
     private void addBookToContainer(Book book, VBox container) {
         if (container == null) return;
 
@@ -252,11 +220,11 @@ public class HomepageController implements Initializable {
             // Crea un HBox principale che conterrà la colonna di informazioni e il pulsante
             HBox mainBox = new HBox();
             mainBox.setAlignment(Pos.CENTER_LEFT);
-            mainBox.setSpacing(15); // Spazio tra la colonna delle info e il pulsante
+            mainBox.setSpacing(15);
 
             // Crea una VBox per titolo e informazioni libro (colonna di sinistra)
             VBox infoColumn = new VBox(10);
-            HBox.setHgrow(infoColumn, Priority.ALWAYS); // Fai crescere la colonna delle info
+            HBox.setHgrow(infoColumn, Priority.ALWAYS);
 
             // Formatta il titolo del libro
             String originalTitle = book.getTitle();
@@ -273,7 +241,7 @@ public class HomepageController implements Initializable {
             // Titolo del libro
             Label titleLabel = new Label(formattedTitle);
             titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #4054B2;");
-            titleLabel.setUserData(originalTitle); // Salva il titolo originale come userData per uso futuro
+            titleLabel.setUserData(originalTitle);
             titleLabel.setWrapText(true);
 
             // Informazioni sul libro
@@ -320,7 +288,7 @@ public class HomepageController implements Initializable {
 
             // Crea un VBox per allineare verticalmente il pulsante
             VBox buttonColumn = new VBox();
-            buttonColumn.setAlignment(Pos.CENTER); // Allinea verticalmente al centro
+            buttonColumn.setAlignment(Pos.CENTER);
 
             // Pulsante "Visualizza"
             Button viewButton = new Button("Visualizza");
@@ -330,7 +298,7 @@ public class HomepageController implements Initializable {
             // Aggiungi il pulsante alla colonna di destra
             buttonColumn.getChildren().add(viewButton);
 
-            // Aggiungi le due colonne (info e pulsante) al box principale
+            // Aggiungi le due colonne al box principale
             mainBox.getChildren().addAll(infoColumn, buttonColumn);
 
             // Aggiungi il box principale alla scheda del libro
@@ -348,14 +316,14 @@ public class HomepageController implements Initializable {
             errorLabel.setStyle("-fx-text-fill: red;");
             container.getChildren().add(errorLabel);
         }
-    } /**
+    }
+
+    /**
      * Gestisce il click sul pulsante "Login"
-     * Naviga alla pagina di login
      */
     @FXML
     public void entrainlogin(ActionEvent event) {
         try {
-            // Carica la pagina di login
             String fxmlFile = "/book_recommender/lab_b/login.fxml";
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
 
@@ -364,11 +332,7 @@ public class HomepageController implements Initializable {
             }
 
             Parent root = loader.load();
-
-            // Ottieni lo stage corrente
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            // Imposta la nuova scena
             Scene scene = new Scene(root);
             stage.setScene(scene);
             stage.show();
@@ -381,12 +345,10 @@ public class HomepageController implements Initializable {
 
     /**
      * Gestisce il click sul pulsante "Registrazione"
-     * Naviga alla pagina di registrazione
      */
     @FXML
     public void entrainregistrazione(ActionEvent event) {
         try {
-            // Carica la pagina di registrazione
             String fxmlFile = "/book_recommender/lab_b/registrazione.fxml";
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
 
@@ -395,14 +357,9 @@ public class HomepageController implements Initializable {
             }
 
             Parent root = loader.load();
-
-            // Ottieni lo stage corrente
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            // Imposta la nuova scena
             Scene scene = new Scene(root);
             stage.setScene(scene);
-
             stage.show();
 
         } catch (IOException e) {
@@ -416,9 +373,7 @@ public class HomepageController implements Initializable {
      */
     @FXML
     public void onTitleTabClicked(ActionEvent event) {
-        // Implementazione per la visualizzazione della ricerca per titolo
         try {
-            // Aggiorna la visibilità delle pagine
             titlePage.setVisible(true);
             authorPage.setVisible(false);
             authorYearPage.setVisible(false);
@@ -435,9 +390,7 @@ public class HomepageController implements Initializable {
 
     @FXML
     public void onAuthorTabClicked(ActionEvent event) {
-        // Implementazione per la visualizzazione della ricerca per autore
         try {
-            // Aggiorna la visibilità delle pagine
             titlePage.setVisible(false);
             authorPage.setVisible(true);
             authorYearPage.setVisible(false);
@@ -455,7 +408,6 @@ public class HomepageController implements Initializable {
     @FXML
     public void onAuthorYearTabClicked(ActionEvent event) {
         try {
-            // Aggiorna la visibilità delle pagine
             titlePage.setVisible(false);
             authorPage.setVisible(false);
             authorYearPage.setVisible(true);
@@ -485,7 +437,6 @@ public class HomepageController implements Initializable {
                     List<Book> results = BookService.searchBooksByTitle(searchTitle);
                     displaySearchResults(results, bookListContainer);
                 } else {
-                    // Se il campo di ricerca è vuoto, mostra i libri più votati
                     loadTopRatedBooks();
                 }
             } else if (authorPage != null && authorPage.isVisible()) {
@@ -519,6 +470,7 @@ public class HomepageController implements Initializable {
             e.printStackTrace();
         }
     }
+
     /**
      * Mostra i risultati della ricerca nel contenitore specificato
      */
@@ -550,16 +502,14 @@ public class HomepageController implements Initializable {
             e.printStackTrace();
         }
     }
+
     /**
      * Gestisce la visualizzazione dei dettagli del libro
-     * Ora modificato per navigare alla pagina di dettaglio del libro
      */
     @FXML
     public void visualizzalibro(ActionEvent event) {
-        // Questa è la versione vecchia che estrae il titolo del libro dal componente UI
         Button sourceButton = (Button) event.getSource();
 
-        // Troviamo il libro corrispondente al pulsante
         Node parent = sourceButton.getParent();
         while (parent != null && !(parent instanceof VBox)) {
             parent = parent.getParent();
@@ -571,7 +521,6 @@ public class HomepageController implements Initializable {
             Label titleLabel = (Label) ((HBox) bookCard.getChildren().get(0)).getChildren().get(0);
             String bookTitle = titleLabel.getText();
 
-            // Naviga alla pagina di dettaglio del libro
             navigateToBookDetails(event, bookTitle);
         }
     }
@@ -580,7 +529,6 @@ public class HomepageController implements Initializable {
      * Versione sovraccarica del metodo per gestire direttamente il titolo del libro
      */
     public void visualizzalibro(ActionEvent event, String bookTitle) {
-        // Naviga alla pagina di dettaglio del libro
         navigateToBookDetails(event, bookTitle);
     }
 
@@ -589,19 +537,15 @@ public class HomepageController implements Initializable {
      */
     private void navigateToBookDetails(ActionEvent event, String bookTitle) {
         try {
-            // Carica la pagina di dettaglio del libro
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/stampadettaglinologin.fxml"));
             Parent root = loader.load();
 
-            // Ottieni il controller e passa il titolo del libro
             BookDetailsController controller = loader.getController();
             controller.setBookData(bookTitle);
 
-            // Imposta la nuova scena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-
             stage.show();
 
         } catch (IOException e) {

@@ -13,88 +13,52 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Controller per la selezione dei libri.
- * Questo controller gestisce l'interfaccia utente per selezionare un libro dalla libreria.
- */
 public class BookSelectionController {
 
-    @FXML
-    private Label userIdLabel;
-
-    @FXML
-    private Label libraryNameLabel;
-
-    @FXML
-    private ListView<String> booksListView;
-
-    @FXML
-    private Label noBooksLabel;
-
-    @FXML
-    private Label errorLabel;
-
-    @FXML
-    private Button selectButton;
-
-    @FXML
-    private Button backButton;
-
-    @FXML
-    private Button cancelButton;
+    @FXML private Label userIdLabel;
+    @FXML private Label libraryNameLabel;
+    @FXML private ListView<String> booksListView;
+    @FXML private Label noBooksLabel;
+    @FXML private Label errorLabel;
+    @FXML private Button selectButton;
+    @FXML private Button backButton;
+    @FXML private Button cancelButton;
 
     private String userId;
     private String libraryName;
     private List<String> books = new ArrayList<>();
-
-    // Variabile per tracciare l'operazione corrente (valutazione, aggiunta, ecc.)
     private String operationType;
+    private DatabaseManager dbManager;
 
-    /**
-     * Inizializza il controller.
-     * Questo metodo viene chiamato automaticamente da JavaFX dopo che l'FXML è stato caricato.
-     */
+    public BookSelectionController() {
+        try {
+            dbManager = DatabaseManager.getInstance();
+        } catch (SQLException e) {
+            System.err.println("Error initializing database connection: " + e.getMessage());
+        }
+    }
+
     public void initialize() {
-        // Nasconde i messaggi di errore all'inizio
         errorLabel.setVisible(false);
         noBooksLabel.setVisible(false);
-
-        // Imposta l'operazione predefinita
-        operationType = "select"; // Operazione generica di selezione
-
-        // Aggiungi event listener per il tasto Enter nella ListView
+        operationType = "select";
         booksListView.setOnKeyPressed(this::handleKeyPress);
     }
 
-    /**
-     * Gestisce gli eventi di pressione tasti nella ListView.
-     * Se viene premuto Enter, attiva la selezione come se fosse stato premuto il pulsante Seleziona.
-     *
-     * @param event l'evento di pressione del tasto
-     */
     private void handleKeyPress(KeyEvent event) {
         if (event.getCode() == KeyCode.ENTER) {
             String selectedBook = booksListView.getSelectionModel().getSelectedItem();
             if (selectedBook != null) {
-                // Simula la pressione del pulsante seleziona
                 handleSelect(new ActionEvent(event.getSource(), null));
             }
         }
     }
 
-    /**
-     * Imposta i dati necessari (userId e libreria selezionata).
-     * Questo metodo deve essere chiamato dopo il caricamento del controller.
-     *
-     * @param userId ID dell'utente
-     * @param libraryName nome della libreria selezionata
-     */
     public void setData(String userId, String libraryName) {
         this.userId = userId;
         this.libraryName = libraryName;
@@ -102,10 +66,8 @@ public class BookSelectionController {
         userIdLabel.setText(userId);
         libraryNameLabel.setText(libraryName);
 
-        // Carica i libri dell'utente per la libreria selezionata
         loadUserBooks(userId, libraryName);
 
-        // Verifica se ci sono libri disponibili
         if (books.isEmpty()) {
             noBooksLabel.setVisible(true);
             selectButton.setDisable(true);
@@ -115,136 +77,84 @@ public class BookSelectionController {
         }
     }
 
-    /**
-     * Imposta i dati necessari e specifica il tipo di operazione.
-     *
-     * @param userId ID dell'utente
-     * @param libraryName nome della libreria selezionata
-     * @param operationType tipo di operazione ("rate" per valutazione, "recommend" per consiglio)
-     */
     public void setData(String userId, String libraryName, String operationType) {
         this.operationType = operationType;
 
-        // Imposta il titolo del pulsante in base all'operazione
         if ("rate".equals(operationType)) {
             selectButton.setText("Avanti");
         } else if ("recommend".equals(operationType)) {
             selectButton.setText("Avanti");
         }
 
-        // Imposta gli altri dati
         setData(userId, libraryName);
     }
 
-    /**
-     * Carica i libri dell'utente per la libreria selezionata dal file CSV.
-     *
-     * @param userId ID dell'utente
-     * @param libraryName nome della libreria selezionata
-     */
     private void loadUserBooks(String userId, String libraryName) {
-        String csvFilePath = "data/Librerie.dati.csv"; // Il percorso del file CSV
-        books.clear(); // Pulisce eventuali libri precedenti
-        booksListView.getItems().clear(); // Pulisce la ListView
+        books.clear();
+        booksListView.getItems().clear();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
-            String line;
-            // Leggi l'intestazione per identificare gli indici delle colonne
-            String headerLine = br.readLine();
+        String sql = "SELECT b.title FROM books b " +
+                "JOIN library_books lb ON b.id = lb.book_id " +
+                "JOIN libraries l ON lb.library_id = l.id " +
+                "WHERE l.user_id = ? AND l.library_name = ?";
 
-            if (headerLine == null) {
-                throw new IOException("Il file CSV non contiene dati");
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userId);
+            pstmt.setString(2, libraryName);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                String bookTitle = rs.getString("title");
+                books.add(bookTitle);
             }
 
-            String[] headers = headerLine.trim().split("\\s+");
-
-            // Cerca la riga dell'utente con la libreria specificata
-            while ((line = br.readLine()) != null) {
-                String[] data = line.trim().split("\\s+");
-
-                // Verifica che ci siano abbastanza dati e che l'ID utente e la libreria corrispondano
-                if (data.length >= 3 && data[0].trim().equals(userId.trim()) && data[1].trim().equals(libraryName.trim())) {
-                    // Aggiungi tutti i libri non nulli dalla riga
-                    for (int i = 2; i < data.length; i++) {
-                        if (!data[i].equals("null")) {
-                            // Sostituisci gli underscore con spazi per i titoli dei libri
-                            String bookTitle = data[i].replace("_", " ");
-                            books.add(bookTitle);
-                        }
-                    }
-                    break; // Abbiamo trovato la riga giusta, possiamo uscire dal ciclo
-                }
-            }
-
-            // Popola la ListView con i libri trovati
             if (!books.isEmpty()) {
                 booksListView.getItems().addAll(books);
             }
 
-        } catch (IOException e) {
-            System.err.println("Errore durante la lettura del file Librerie.dati.csv: " + e.getMessage());
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("Error loading user books: " + e.getMessage());
             errorLabel.setText("Errore: Impossibile caricare i libri. " + e.getMessage());
             errorLabel.setVisible(true);
         }
     }
-
-    /**
-     * Gestisce il click sul pulsante "Seleziona".
-     * Seleziona il libro scelto e procede all'operazione successiva.
-     */
 
     @FXML
     public void handleSelect(ActionEvent event) {
         String selectedBook = booksListView.getSelectionModel().getSelectedItem();
 
         if (selectedBook == null) {
-            // Nessun libro selezionato, mostra errore
             errorLabel.setText("Errore: Seleziona un libro prima di procedere.");
             errorLabel.setVisible(true);
             return;
         }
 
-        // Nascondi eventuali messaggi di errore
         errorLabel.setVisible(false);
 
-        // Gestisci in base al tipo di operazione
         if ("rate".equals(operationType)) {
-            // Naviga alla pagina di valutazione del libro
             navigateToRateBook(event, selectedBook);
         } else if ("recommend".equals(operationType)) {
-            // Naviga alla pagina di consiglio del libro
             navigateToRecommendBook(event, selectedBook);
         } else {
-            // Operazione generica di selezione
             errorLabel.setText("Libro '" + selectedBook + "' selezionato con successo!");
-            errorLabel.setStyle("-fx-text-fill: #75B965;"); // Verde per il successo
+            errorLabel.setStyle("-fx-text-fill: #75B965;");
             errorLabel.setVisible(true);
         }
     }
 
-
-
-
-
-    /**
-     * Naviga alla pagina di consiglio del libro.
-     */
     private void navigateToRecommendBook(ActionEvent event, String bookTitle) {
         try {
-            // Carica la pagina di consiglio del libro
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/consigli.fxml"));
             Parent root = loader.load();
 
-            // Ottieni il controller e passa i dati necessari
             RecommendBookController controller = loader.getController();
             controller.setData(userId, bookTitle, libraryName);
 
-            // Imposta la nuova scena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-
             stage.show();
 
         } catch (IOException e) {
@@ -254,25 +164,18 @@ public class BookSelectionController {
             errorLabel.setVisible(true);
         }
     }
-    /**
-     * Naviga alla pagina di valutazione del libro.
-     * PERCORSO CORRETTO PER VALUTAZIONE.FXML
-     */
+
     private void navigateToRateBook(ActionEvent event, String bookTitle) {
         try {
-            // Carica la pagina di valutazione del libro con il percorso corretto
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/valutazione.fxml"));
             Parent root = loader.load();
 
-            // Ottieni il controller e passa i dati necessari
-            book_recommender.lab_b.RateBookController controller = loader.getController();
+            RateBookController controller = loader.getController();
             controller.setData(userId, bookTitle, libraryName);
 
-            // Imposta la nuova scena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-
             stage.show();
 
         } catch (IOException e) {
@@ -283,37 +186,22 @@ public class BookSelectionController {
         }
     }
 
-    /**
-     * Gestisce il click sul pulsante "Torna alla libreria".
-     * Torna alla schermata di selezione della libreria.
-     */
     @FXML
     public void handleBack(ActionEvent event) {
         navigateToLibrarySelection(event);
     }
 
-    /**
-     * Gestisce il click sul pulsante "Annulla".
-     * Torna alla schermata di selezione della libreria.
-     */
     @FXML
     public void handleCancel(ActionEvent event) {
         navigateToLibrarySelection(event);
     }
 
-    /**
-     * Naviga alla schermata di selezione della libreria.
-     */
     private void navigateToLibrarySelection(ActionEvent event) {
         try {
-            // Carica la schermata di selezione libreria
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/selezionalib.fxml"));
             Parent root = loader.load();
 
-            // Ottieni il controller e passa i dati dell'utente
             LibrarySelectionController controller = loader.getController();
-
-            // Passa anche il tipo di operazione se necessario
             if ("rate".equals(operationType)) {
                 controller.setUserId(userId, "rate");
             } else if ("recommend".equals(operationType)) {
@@ -322,11 +210,9 @@ public class BookSelectionController {
                 controller.setUserId(userId);
             }
 
-            // Imposta la nuova scena
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             stage.setScene(scene);
-            stage.setTitle("Book Recommender - Seleziona Libreria");
             stage.show();
 
         } catch (IOException e) {

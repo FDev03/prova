@@ -13,10 +13,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.sql.*;
 
 public class LoginController {
 
@@ -29,13 +27,16 @@ public class LoginController {
     @FXML
     private Label errorMessage;
 
-    // Percorso relativo al file CSV degli utenti
-    private final String USERS_FILE_PATH = "data/UtentiRegistrati.csv";
+    private DatabaseManager dbManager;
 
-    /**
-     * Gestisce l'evento di pressione tasto nella finestra di login
-     * Utile per attivare il login quando si preme Invio
-     */
+    public LoginController() {
+        try {
+            dbManager = DatabaseManager.getInstance();
+        } catch (SQLException e) {
+            System.err.println("Error initializing database connection: " + e.getMessage());
+        }
+    }
+
     @FXML
     public void handleKeyPress(KeyEvent event) {
         if (event.getCode() == KeyCode.ENTER) {
@@ -43,79 +44,46 @@ public class LoginController {
         }
     }
 
-    /**
-     * Gestisce il click sul pulsante "Login" o la pressione del tasto Invio
-     */
     @FXML
     public void handleLogin(ActionEvent event) {
         String userId = userIdField.getText();
         String password = passwordField.getText();
 
-        // Verifica credenziali
         if (isValidLogin(userId, password)) {
-            // Login riuscito - vai alla pagina del menu utente
             errorMessage.setVisible(false);
             navigateToUserMenu(event, userId);
         } else {
-            // Login fallito - mostra messaggio di errore
             errorMessage.setVisible(true);
         }
     }
 
-    // Metodo per verificare le credenziali usando il file CSV
     private boolean isValidLogin(String userId, String password) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE_PATH))) {
-            String line;
-            // Salta l'intestazione (prima riga)
-            reader.readLine();
+        String sql = "SELECT * FROM users WHERE user_id = ? AND password = ?";
 
-            while ((line = reader.readLine()) != null) {
-                String[] fields = line.split(",");
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-                // Verifica che l'array abbia almeno 5 elementi
-                if (fields.length >= 5) {
-                    // Nome e Cognome,Codice Fiscale,Email,UserID,Password
-                    String storedUserId = fields[3].trim();
-                    String storedPassword = fields[4].trim();
+            pstmt.setString(1, userId);
+            pstmt.setString(2, password);
 
-                    if (userId.equals(storedUserId) && password.equals(storedPassword)) {
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
 
-                        return true;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Errore nella lettura del file degli utenti: " + e.getMessage());
-            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("Error validating login: " + e.getMessage());
+            return false;
         }
-
-        return false;
     }
 
-    // Metodo per navigare al menu utente
     private void navigateToUserMenu(ActionEvent event, String userId) {
         try {
-            // Carica il file FXML del menu utente
-            String fxmlFile = "/book_recommender/lab_b/userMenu.fxml";
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
-
-            // Debug: stampa i dettagli del percorso
-
-
-            if (getClass().getResource(fxmlFile) == null) {
-                throw new IOException("File FXML non trovato: " + fxmlFile);
-            }
-
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/userMenu.fxml"));
             Parent root = loader.load();
 
-            // Ottieni il controller e passa il nome utente
             UserMenuController controller = loader.getController();
             controller.setUserData(userId);
 
-            // Ottieni lo stage corrente
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            // Imposta la nuova scena mantenendo le dimensioni
             Scene scene = new Scene(root);
             stage.setScene(scene);
             stage.show();
@@ -123,43 +91,25 @@ public class LoginController {
         } catch (IOException e) {
             System.err.println("Errore nel caricamento del menu utente: " + e.getMessage());
             e.printStackTrace();
-
-            // Mostra un messaggio di errore all'utente
             errorMessage.setText("Errore: " + e.getMessage());
             errorMessage.setVisible(true);
         }
     }
 
-    /**
-     * Gestisce il click sul pulsante "Torna al menu principale"
-     */
     @FXML
     public void handleBack(ActionEvent event) {
         try {
-            // Torna alla pagina principale
-            String fxmlFile = "/book_recommender/lab_b/homepage.fxml";
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
-
-            if (getClass().getResource(fxmlFile) == null) {
-                throw new IOException("File FXML non trovato: " + fxmlFile);
-            }
-
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/homepage.fxml"));
             Parent root = loader.load();
 
-            // Ottieni lo stage corrente
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            // Imposta la nuova scena
             Scene scene = new Scene(root);
             stage.setScene(scene);
-
             stage.show();
 
         } catch (IOException e) {
             System.err.println("Errore nel caricamento della homepage: " + e.getMessage());
             e.printStackTrace();
-
-            // Mostra un messaggio di errore all'utente
             errorMessage.setText("Errore: " + e.getMessage());
             errorMessage.setVisible(true);
         }
