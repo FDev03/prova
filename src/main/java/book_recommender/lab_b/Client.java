@@ -10,9 +10,7 @@ import javafx.scene.layout.*;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+
 import java.net.Socket;
 import java.util.Objects;
 import java.util.Optional;
@@ -119,42 +117,25 @@ public class Client extends Application {
 
         // Campi di ingresso - solo host e porta ngrok
         TextField hostField = new TextField();
-        hostField.setPromptText("Hostname ngrok (senza tcp://)");
+        hostField.setPromptText("Hostname ngrok");
 
         TextField portField = new TextField();
         portField.setPromptText("Porta ngrok");
 
-        // Mostra le credenziali fisse (solo informativo)
-        Label dbNameLabel = new Label("book_recommender");
-        dbNameLabel.setStyle("-fx-font-weight: bold;");
-
-        Label userLabel = new Label(dbUser);
-        userLabel.setStyle("-fx-font-weight: bold;");
-
-        Label passwordLabel = new Label(dbPassword);
-        passwordLabel.setStyle("-fx-font-weight: bold;");
-
-        // Aggiungi i campi alla griglia
+        // Aggiungi solo i campi per host e porta alla griglia
         grid.add(new Label("Host ngrok:"), 0, 0);
         grid.add(hostField, 1, 0);
         grid.add(new Label("Porta ngrok:"), 0, 1);
         grid.add(portField, 1, 1);
-        grid.add(new Label("Database:"), 0, 2);
-        grid.add(dbNameLabel, 1, 2);
-        grid.add(new Label("Username:"), 0, 3);
-        grid.add(userLabel, 1, 3);
-        grid.add(new Label("Password:"), 0, 4);
-        grid.add(passwordLabel, 1, 4);
 
         // Aggiunge la griglia al dialog
         dialog.getDialogPane().setContent(grid);
 
-        // Opzionale: preselezione il primo campo
-        Platform.runLater(hostField::requestFocus);
+        // RIMUOVI QUESTA RIGA:
+        // Platform.runLater(hostField::requestFocus);
 
         // Mostra il dialog e aspetta che l'utente faccia una scelta
         Optional<ButtonType> result = dialog.showAndWait();
-
         if (result.isPresent() && result.get() == ButtonType.OK) {
             // L'utente ha confermato, procedi con i parametri forniti
             String host = hostField.getText().trim();
@@ -220,7 +201,7 @@ public class Client extends Application {
 
         } catch (Exception e) {
             System.err.println("Errore durante la registrazione del client: " + e.getMessage());
-            e.printStackTrace();
+
         }
     }
 
