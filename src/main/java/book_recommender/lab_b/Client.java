@@ -23,12 +23,12 @@ import java.util.UUID;
 public class Client extends Application {
 
     // Dimensioni iniziali per la finestra dell'applicazione
-    public static final double INITIAL_WIDTH = 800.0;
-    public static final double INITIAL_HEIGHT = 600.0;
+    public static final double INITIAL_WIDTH = 1000.0;
+    public static final double INITIAL_HEIGHT = 700.0;
 
     // Dimensioni minime per la finestra dell'applicazione
-    public static final double MIN_WIDTH = 600.0;
-    public static final double MIN_HEIGHT = 400.0;
+    public static final double MIN_WIDTH = 1000.0;
+    public static final double MIN_HEIGHT = 700.0;
 
     // ID univoco per questo client
     private final String clientId = UUID.randomUUID().toString();
@@ -40,8 +40,8 @@ public class Client extends Application {
 
     // Connessione remota
     private String dbUrl;
-    private String dbUser = "book_admin_8530"; // Credenziali fisse
-    private String dbPassword = "CPuc#@r-zbKY"; // Credenziali fisse
+    private String dbUser = "book_admin_8530"; // Credenziali fisse per vedere il db su pgadmin
+    private String dbPassword = "CPuc#@r-zbKY"; // Credenziali fisse per vedere il db su pgadmin
 
     // Flag per usare ngrok - sempre true
     private boolean useNgrok = true;
