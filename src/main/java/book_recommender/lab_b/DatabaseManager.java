@@ -1,21 +1,28 @@
 package book_recommender.lab_b;
 
-import java.sql.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
+import java.net.URL;
+import java.sql.*;
 import java.util.Random;
 
 /**
  * Singleton class for managing database connections.
  * This class provides a centralized way to access the database
  * and can automatically create the database if it doesn't exist.
+ * It also supports remote connections from any network using ngrok.
  */
 public class DatabaseManager {
-    // Database connection settings
-    private static final String HOST = "localhost";
-    private static final String PORT = "5432";
-    private static final String DB_NAME = "book_recommender";
-    private static final String DB_URL = "jdbc:postgresql://" + HOST + ":" + PORT + "/" + DB_NAME;
-    private static final String POSTGRES_URL = "jdbc:postgresql://" + HOST + ":" + PORT + "/postgres"; // Connessione al DB postgres per creazione
+    // Database connection settings - default values
+    private static final String DEFAULT_HOST = "0.0.0.0";
+    private static final String DEFAULT_PORT = "5432";
+    private static final String DEFAULT_DB_NAME = "book_recommender";
+
+    // Connection strings - these will be updated at runtime for remote connections
+    private static String DB_URL = "jdbc:postgresql://" + DEFAULT_HOST + ":" + DEFAULT_PORT + "/" + DEFAULT_DB_NAME;
+    private static String POSTGRES_URL = "jdbc:postgresql://" + DEFAULT_HOST + ":" + DEFAULT_PORT + "/postgres";
 
     // User credentials will be generated dynamically or loaded from saved settings
     private static String DB_USER = "postgres"; // Fallback default
@@ -26,14 +33,48 @@ public class DatabaseManager {
 
     private static DatabaseManager instance;
     private Connection connection;
+    private boolean isRemoteConnection = false;
+
+    // Riferimento a NgrokManager per il tunneling
+    private static NgrokManager ngrokManager;
 
     /**
-     * Private constructor to prevent instantiation from outside.
-     * Attempts to connect to the database, and creates it if it doesn't exist.
-     *
+     * Private constructor standard
      * @throws SQLException if a database access error occurs
      */
     private DatabaseManager() throws SQLException {
+        // Call the constructor with parameter
+        this(false);
+    }
+
+    /**
+     * Private constructor with parameters for connection type
+     * @param isRemote flag to indicate if this is a remote connection
+     * @throws SQLException if a database access error occurs
+     */
+    private DatabaseManager(boolean isRemote) throws SQLException {
+        this.isRemoteConnection = isRemote;
+
+        if (isRemote) {
+            // For remote connections, we rely on the DB_URL, DB_USER, and DB_PASSWORD
+            // values that have been set externally before calling this constructor
+            try {
+                connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+                System.out.println("Successfully connected to remote database: " + DB_URL);
+            } catch (SQLException e) {
+                throw new SQLException("Failed to connect to remote database: " + e.getMessage(), e);
+            }
+        } else {
+            // For local connections, use the standard approach with credential loading
+            initializeLocalConnection();
+        }
+    }
+
+    /**
+     * Initializes a local connection with credential management
+     * @throws SQLException if a database access error occurs
+     */
+    private void initializeLocalConnection() throws SQLException {
         // Try to load or create credentials
         loadOrCreateCredentials();
 
@@ -73,23 +114,23 @@ public class DatabaseManager {
                     boolean dbExists = false;
                     try (Statement checkStmt = postgresConn.createStatement()) {
                         ResultSet rs = checkStmt.executeQuery(
-                                "SELECT 1 FROM pg_database WHERE datname = '" + DB_NAME + "'");
+                                "SELECT 1 FROM pg_database WHERE datname = '" + DEFAULT_DB_NAME + "'");
                         dbExists = rs.next();
                     }
 
                     if (!dbExists) {
                         // Create the database with the new user as owner
                         try (Statement createStmt = postgresConn.createStatement()) {
-                            createStmt.execute("CREATE DATABASE " + DB_NAME + " WITH OWNER = " + DB_USER);
-                            System.out.println("Database " + DB_NAME + " created with owner " + DB_USER);
+                            createStmt.execute("CREATE DATABASE " + DEFAULT_DB_NAME + " WITH OWNER = " + DB_USER);
+                            System.out.println("Database " + DEFAULT_DB_NAME + " created with owner " + DB_USER);
                         }
                     } else {
-                        System.out.println("Database " + DB_NAME + " already exists");
+                        System.out.println("Database " + DEFAULT_DB_NAME + " already exists");
 
                         // Change ownership of the database if needed
                         try (Statement grantStmt = postgresConn.createStatement()) {
-                            grantStmt.execute("ALTER DATABASE " + DB_NAME + " OWNER TO " + DB_USER);
-                            System.out.println("Changed owner of " + DB_NAME + " to " + DB_USER);
+                            grantStmt.execute("ALTER DATABASE " + DEFAULT_DB_NAME + " OWNER TO " + DB_USER);
+                            System.out.println("Changed owner of " + DEFAULT_DB_NAME + " to " + DB_USER);
                         } catch (SQLException grantError) {
                             System.err.println("Warning: Could not change database owner: " + grantError.getMessage());
                         }
@@ -100,7 +141,7 @@ public class DatabaseManager {
                     // Now try to connect to the database with our user
                     try {
                         connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                        System.out.println("Successfully connected to database " + DB_NAME + " as user " + DB_USER);
+                        System.out.println("Successfully connected to database " + DEFAULT_DB_NAME + " as user " + DB_USER);
                     } catch (SQLException connError) {
                         throw new SQLException("Created user and database, but couldn't connect with new credentials: " + connError.getMessage());
                     }
@@ -109,6 +150,31 @@ public class DatabaseManager {
                 throw new SQLException("Impossibile connettersi a PostgreSQL: " + postgresError.getMessage());
             }
         }
+    }
+
+    /**
+     * Creates a remote instance with specific connection parameters
+     * @param jdbcUrl The full JDBC URL for connecting to the database
+     * @param username The username for the database connection
+     * @param password The password for the database connection
+     * @return A DatabaseManager instance configured for remote connection
+     * @throws SQLException if a database access error occurs
+     */
+    public static synchronized DatabaseManager createRemoteInstance(String jdbcUrl, String username, String password) throws SQLException {
+        // If there's an existing instance, close it
+        if (instance != null) {
+            instance.closeConnection();
+            instance = null;
+        }
+
+        // Set the connection parameters
+        DB_URL = jdbcUrl;
+        DB_USER = username;
+        DB_PASSWORD = password;
+
+        // Create a new instance with isRemote = true
+        instance = new DatabaseManager(true);
+        return instance;
     }
 
     /**
@@ -121,12 +187,32 @@ public class DatabaseManager {
             if (!rs.next()) {
                 // User doesn't exist, create it
                 stmt.execute("CREATE USER " + DB_USER + " WITH PASSWORD '" + DB_PASSWORD + "'");
-                stmt.execute("ALTER USER " + DB_USER + " CREATEDB");
+                stmt.execute("ALTER USER " + DB_USER + " WITH LOGIN CREATEDB NOSUPERUSER INHERIT");
+
+                // Grant privileges for remote access
+                stmt.execute("GRANT ALL PRIVILEGES ON DATABASE " + DEFAULT_DB_NAME + " TO " + DB_USER);
+                stmt.execute("ALTER USER " + DB_USER + " CONNECTION LIMIT -1"); // No connection limit
+
                 System.out.println("Created PostgreSQL user: " + DB_USER);
+
+                // Try to create a read-only user
+                try {
+                    stmt.execute("CREATE ROLE book_reader WITH LOGIN PASSWORD 'reader2024' NOSUPERUSER INHERIT NOCREATEROLE NOREPLICATION");
+                    stmt.execute("GRANT CONNECT ON DATABASE " + DEFAULT_DB_NAME + " TO book_reader");
+                    System.out.println("Created read-only PostgreSQL user: book_reader");
+                } catch (SQLException e) {
+                    // Ignore if we can't create book_reader user
+                    System.out.println("Could not create read-only user book_reader: " + e.getMessage());
+                }
             } else {
                 // User exists, update password
                 stmt.execute("ALTER USER " + DB_USER + " WITH PASSWORD '" + DB_PASSWORD + "'");
-                stmt.execute("ALTER USER " + DB_USER + " CREATEDB");
+                stmt.execute("ALTER USER " + DB_USER + " WITH CREATEDB");
+
+                // Grant privileges for remote access
+                stmt.execute("GRANT ALL PRIVILEGES ON DATABASE " + DEFAULT_DB_NAME + " TO " + DB_USER);
+                stmt.execute("ALTER USER " + DB_USER + " CONNECTION LIMIT -1"); // No connection limit
+
                 System.out.println("Updated existing PostgreSQL user: " + DB_USER);
             }
         }
@@ -180,6 +266,137 @@ public class DatabaseManager {
             System.out.println("Generated and saved new credentials for user: " + DB_USER);
         } catch (java.io.IOException e) {
             System.err.println("Error saving credentials file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Initializes ngrok tunnel for PostgreSQL
+     * @param postgresPort the PostgreSQL port to expose
+     * @return true if tunnel was successfully established
+     */
+    public boolean initializeNgrokTunnel(int postgresPort) {
+        if (ngrokManager == null) {
+            ngrokManager = new NgrokManager();
+        }
+
+        boolean success = ngrokManager.startNgrokTunnel(postgresPort);
+        if (success) {
+            System.out.println("Ngrok tunnel started successfully");
+            return true;
+        } else {
+            System.err.println("Failed to start ngrok tunnel");
+            return false;
+        }
+    }
+
+    /**
+     * Stops the ngrok tunnel
+     */
+    public void stopNgrokTunnel() {
+        if (ngrokManager != null) {
+            ngrokManager.stopTunnel();
+            System.out.println("Ngrok tunnel stopped");
+        }
+    }
+
+    /**
+     * Gets the JDBC connection string for the ngrok tunnel
+     * @return the JDBC connection string or null if tunnel is not active
+     */
+    public String getNgrokJdbcConnectionString() {
+        if (ngrokManager != null) {
+            return ngrokManager.getJdbcConnectionString();
+        }
+        return null;
+    }
+
+    /**
+     * Gets the ngrok public URL
+     * @return the public URL or null if tunnel is not active
+     */
+    public String getNgrokPublicUrl() {
+        if (ngrokManager != null) {
+            return ngrokManager.getPublicUrl();
+        }
+        return null;
+    }
+
+    /**
+     * Gets the ngrok public port
+     * @return the public port or -1 if tunnel is not active
+     */
+    public int getNgrokPublicPort() {
+        if (ngrokManager != null) {
+            return ngrokManager.getPublicPort();
+        }
+        return -1;
+    }
+
+    /**
+     * Ottiene l'indirizzo IP pubblico del server
+     * @return L'indirizzo IP pubblico o null in caso di errore
+     */
+    public static String getPublicIPAddress() {
+        try {
+            URL url = new URL("https://api.ipify.org");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            return reader.readLine().trim();
+        } catch (Exception e) {
+            System.err.println("Errore nel recupero dell'IP pubblico: " + e.getMessage());
+            try {
+                // Metodo alternativo
+                URL url = new URL("https://checkip.amazonaws.com");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+                return reader.readLine().trim();
+            } catch (Exception ex) {
+                System.err.println("Tutti i tentativi di recupero dell'IP pubblico falliti");
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Genera una stringa di connessione JDBC utilizzabile da client remoti
+     * @param usePublicIP Se true, utilizza l'IP pubblico
+     * @return La stringa di connessione JDBC
+     */
+    public static String getConnectionString(boolean usePublicIP) {
+        try {
+            String ip;
+            if (usePublicIP) {
+                ip = getPublicIPAddress();
+                if (ip == null) {
+                    ip = InetAddress.getLocalHost().getHostAddress();
+                }
+            } else {
+                ip = InetAddress.getLocalHost().getHostAddress();
+            }
+            return "jdbc:postgresql://" + ip + ":" + DEFAULT_PORT + "/" + DEFAULT_DB_NAME;
+        } catch (Exception e) {
+            System.err.println("Error generating connection string: " + e.getMessage());
+            return DB_URL; // Fallback to default
+        }
+    }
+
+    /**
+     * Verifica se il database è accessibile da remoto
+     * @return true se il database è accessibile da remoto
+     */
+    public static boolean isRemotelyAccessible() {
+        String publicIP = getPublicIPAddress();
+        if (publicIP == null) {
+            return false;
+        }
+
+        // Prova a connettersi usando l'IP pubblico
+        String testUrl = "jdbc:postgresql://" + publicIP + ":" + DEFAULT_PORT + "/" + DEFAULT_DB_NAME;
+        try {
+            Connection testConn = DriverManager.getConnection(testUrl, DB_USER, DB_PASSWORD);
+            testConn.close();
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Database not accessible from public IP: " + e.getMessage());
+            return false;
         }
     }
 
@@ -309,5 +526,33 @@ public class DatabaseManager {
      */
     public String getDbPassword() {
         return DB_PASSWORD;
+    }
+
+    /**
+     * Returns whether this is a remote connection
+     */
+    public boolean isRemoteConnection() {
+        return isRemoteConnection;
+    }
+
+    /**
+     * Returns the current database URL
+     */
+    public String getDbUrl() {
+        return DB_URL;
+    }
+
+    /**
+     * Returns the default port used for database connections
+     */
+    public static String getDefaultPort() {
+        return DEFAULT_PORT;
+    }
+
+    /**
+     * Returns the default database name
+     */
+    public static String getDefaultDbName() {
+        return DEFAULT_DB_NAME;
     }
 }

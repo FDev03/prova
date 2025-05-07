@@ -10,6 +10,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import java.io.PrintWriter;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 
 import java.io.*;
 import java.net.*;
@@ -38,6 +40,9 @@ public class ServerInterfaceController {
     private static final String DATA_FILE_ID = "1jX6zWXBjf6-eT1y9ypv55tfEtawz86Cz";
     private static final String CONSIGLI_FILE_ID = "1hLT7yvnA2hV6Rg_oTnFsywyPaPstjKo8";
     // Add at the top of the class with other fields
+    private NgrokManager ngrokManager;
+    private boolean ngrokEnabled = false;
+
     private List<Socket> connectedClientSockets = new ArrayList<>();
     // Directory temporanea per i file scaricati
     private static final String TEMP_DIR = "temp_data/";
@@ -57,6 +62,17 @@ public class ServerInterfaceController {
     @FXML
     private Label startTimeLabel;
     @FXML
+    private Label ngrokStatusLabel;
+
+    @FXML
+    private TextField ngrokUrlField;
+
+    @FXML
+    private Button startNgrokButton;
+
+    @FXML
+    private Button stopNgrokButton;
+    @FXML
     private Label uptimeLabel;
     @FXML
     private ProgressBar initProgressBar;
@@ -75,7 +91,6 @@ public class ServerInterfaceController {
     private AtomicInteger connectedClients = new AtomicInteger(0);
     private boolean dbExists = false;
     private boolean serverRunning = false;
-
     @FXML
     public void initialize() {
         // Create temp directory if it doesn't exist
@@ -83,6 +98,47 @@ public class ServerInterfaceController {
 
         // Initialize scheduler for updating uptime
         scheduler = Executors.newScheduledThreadPool(1);
+
+        // Inizializza NgrokManager
+        ngrokManager = new NgrokManager();
+        ngrokEnabled = false;
+
+        // Configura l'interfaccia utente per ngrok se i componenti esistono
+        if (ngrokStatusLabel != null) {
+            ngrokStatusLabel.setText("Inattivo");
+            ngrokStatusLabel.setTextFill(Color.RED);
+        }
+
+        if (ngrokUrlField != null) {
+            ngrokUrlField.setEditable(false);
+            ngrokUrlField.setTooltip(new Tooltip("URL pubblico e porta per la connessione tramite ngrok"));
+        }
+
+        if (startNgrokButton != null) {
+            startNgrokButton.setDisable(false);
+            startNgrokButton.setTooltip(new Tooltip("Avvia un tunnel ngrok per rendere il database accessibile da qualsiasi rete"));
+        }
+
+        if (stopNgrokButton != null) {
+            stopNgrokButton.setDisable(true);
+            stopNgrokButton.setTooltip(new Tooltip("Arresta il tunnel ngrok"));
+        }
+
+        // Aggiungi un pulsante per copiare l'URL negli appunti (se necessario)
+        if (ngrokUrlField != null) {
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem copyItem = new MenuItem("Copia informazioni di connessione");
+            copyItem.setOnAction(e -> {
+                String connectionInfo = getNgrokConnectionInfo();
+                Clipboard clipboard = Clipboard.getSystemClipboard();
+                ClipboardContent content = new ClipboardContent();
+                content.putString(connectionInfo);
+                clipboard.setContent(content);
+                addLogMessage("Informazioni di connessione ngrok copiate negli appunti", LogType.INFO);
+            });
+            contextMenu.getItems().add(copyItem);
+            ngrokUrlField.setContextMenu(contextMenu);
+        }
 
         // Disable fields based on initial state
         updateUIState(false);
@@ -95,6 +151,74 @@ public class ServerInterfaceController {
 
         // Add initial log message (now only to console)
         addLogMessage("Server interface initialized", LogType.INFO);
+
+        // Controlla se PostgreSQL è installato e in esecuzione
+        new Thread(() -> {
+            boolean installed = isPostgresInstalled();
+            boolean running = isPostgresRunning();
+
+            Platform.runLater(() -> {
+                if (!installed) {
+                    if (dbStatusLabel != null) {
+                        dbStatusLabel.setText("PostgreSQL non installato");
+                        dbStatusLabel.setTextFill(Color.RED);
+                    }
+                    if (startButton != null) {
+                        startButton.setDisable(true);
+                    }
+                    if (startNgrokButton != null) {
+                        startNgrokButton.setDisable(true);
+                    }
+                    addLogMessage("PostgreSQL non è installato. È necessario installarlo per utilizzare l'applicazione.", LogType.ERROR);
+                } else if (!running) {
+                    if (dbStatusLabel != null) {
+                        dbStatusLabel.setText("PostgreSQL non in esecuzione");
+                        dbStatusLabel.setTextFill(Color.RED);
+                    }
+                    if (startButton != null) {
+                        startButton.setDisable(true);
+                    }
+                    if (startNgrokButton != null) {
+                        startNgrokButton.setDisable(true);
+                    }
+                    addLogMessage("PostgreSQL è installato ma non è in esecuzione. Avviarlo manualmente.", LogType.WARNING);
+                } else {
+                    if (dbStatusLabel != null) {
+                        dbStatusLabel.setText("PostgreSQL pronto");
+                        dbStatusLabel.setTextFill(Color.GREEN);
+                    }
+                    if (startButton != null) {
+                        startButton.setDisable(false);
+                    }
+                    addLogMessage("PostgreSQL è in esecuzione e pronto.", LogType.SUCCESS);
+                }
+            });
+        }).start();
+    }
+    private String getNgrokConnectionInfo() {
+        if (!ngrokEnabled || ngrokManager == null) {
+            return "Ngrok non attivo";
+        }
+
+        String publicUrl = ngrokManager.getPublicUrl();
+        int publicPort = ngrokManager.getPublicPort();
+        String jdbcUrl = ngrokManager.getJdbcConnectionString();
+
+        return "URL pubblico: " + publicUrl + "\n" +
+                "Porta pubblica: " + publicPort + "\n" +
+                "Stringa di connessione JDBC: " + jdbcUrl;
+    }
+    @FXML
+    public void onCopyNgrokInfo(ActionEvent event) {
+        String connectionInfo = getNgrokConnectionInfo();
+
+        // Copia negli appunti
+        javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+        javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+        content.putString(connectionInfo);
+        clipboard.setContent(content);
+
+        addLogMessage("Informazioni di connessione ngrok copiate negli appunti", LogType.INFO);
     }
     @FXML
     public void onStartServer(ActionEvent event) {
@@ -192,6 +316,76 @@ public class ServerInterfaceController {
             addLogMessage("Error checking for existing server: " + e.getMessage(), LogType.ERROR);
             return false;
         }
+    }
+    private void initializeNgrok() {
+        ngrokManager = new NgrokManager();
+        updateNgrokUIState(false);
+    }
+    @FXML
+    public void onStartNgrok(ActionEvent event) {
+        if (ngrokEnabled) return;
+
+        // Disabilita il pulsante durante l'inizializzazione
+        startNgrokButton.setDisable(true);
+
+        // Ottieni la porta PostgreSQL
+        int postgresPort = 5432; // Porta di default
+        try {
+            postgresPort = Integer.parseInt(DatabaseManager.getDefaultPort());
+        } catch (NumberFormatException e) {
+            // Usa la porta di default
+        }
+
+        // Avvia ngrok in un thread separato
+        int finalPostgresPort = postgresPort;
+        new Thread(() -> {
+            boolean success = ngrokManager.startNgrokTunnel(finalPostgresPort);
+
+            Platform.runLater(() -> {
+                if (success) {
+                    ngrokEnabled = true;
+                    updateNgrokUIState(true);
+
+                    // Aggiorna i campi UI con l'URL e la porta pubblici
+                    String publicUrl = ngrokManager.getPublicUrl();
+                    int publicPort = ngrokManager.getPublicPort();
+                    ngrokUrlField.setText(publicUrl + ":" + publicPort);
+
+                    ngrokStatusLabel.setText("Attivo");
+                    ngrokStatusLabel.setTextFill(Color.GREEN);
+
+                    addLogMessage("Tunnel ngrok avviato con successo: " + publicUrl + ":" + publicPort, LogType.SUCCESS);
+                } else {
+                    ngrokStatusLabel.setText("Errore");
+                    ngrokStatusLabel.setTextFill(Color.RED);
+                    startNgrokButton.setDisable(false);
+
+                    addLogMessage("Errore nell'avvio di ngrok", LogType.ERROR);
+                }
+            });
+        }).start();
+    }
+    @FXML
+    public void onStopNgrok(ActionEvent event) {
+        if (!ngrokEnabled) return;
+
+        ngrokManager.stopTunnel();
+        ngrokEnabled = false;
+        updateNgrokUIState(false);
+
+        addLogMessage("Tunnel ngrok arrestato", LogType.INFO);
+    }
+    private void updateNgrokUIState(boolean running) {
+        Platform.runLater(() -> {
+            startNgrokButton.setDisable(running);
+            stopNgrokButton.setDisable(!running);
+
+            if (!running) {
+                ngrokStatusLabel.setText("Inattivo");
+                ngrokStatusLabel.setTextFill(Color.RED);
+                ngrokUrlField.setText("");
+            }
+        });
     }
     /**
      * Connects to an existing server and updates the UI
@@ -386,13 +580,45 @@ public class ServerInterfaceController {
     /**
      * Notifies all clients of shutdown, cleans up database and shuts down server
      */
+    /**
+     * Notifies all clients of shutdown, cleans up database and shuts down server
+     */
     public void cleanupDatabaseAndShutdown() {
         if (!serverRunning) return;
 
-        // Notify all connected clients first
+        // Arresta il tunnel ngrok se attivo
+        if (ngrokManager != null) {
+            try {
+                addLogMessage("Arresto del tunnel ngrok...", LogType.INFO);
+                ngrokManager.stopTunnel();
+
+                // Aggiorna UI per ngrok
+                Platform.runLater(() -> {
+                    if (ngrokStatusLabel != null) {
+                        ngrokStatusLabel.setText("Inattivo");
+                        ngrokStatusLabel.setTextFill(Color.RED);
+                    }
+                    if (ngrokUrlField != null) {
+                        ngrokUrlField.setText("");
+                    }
+                    if (startNgrokButton != null) {
+                        startNgrokButton.setDisable(true);
+                    }
+                    if (stopNgrokButton != null) {
+                        stopNgrokButton.setDisable(true);
+                    }
+                });
+
+                addLogMessage("Tunnel ngrok arrestato con successo", LogType.SUCCESS);
+            } catch (Exception e) {
+                addLogMessage("Errore durante l'arresto del tunnel ngrok: " + e.getMessage(), LogType.ERROR);
+            }
+        }
+
+        // Notifica tutti i client connessi dell'arresto imminente
         addLogMessage("Notifying all clients of server shutdown...", LogType.INFO);
 
-        // Notify all connected clients
+        // Notifica tutti i client connessi
         synchronized(connectedClientSockets) {
             for (Socket clientSocket : connectedClientSockets) {
                 try {
@@ -420,6 +646,7 @@ public class ServerInterfaceController {
         if (serverSocket != null && !serverSocket.isClosed()) {
             try {
                 serverSocket.close();
+                addLogMessage("Server socket closed", LogType.SUCCESS);
             } catch (IOException e) {
                 addLogMessage("Error closing server socket: " + e.getMessage(), LogType.ERROR);
             }
@@ -427,7 +654,17 @@ public class ServerInterfaceController {
 
         // Shutdown scheduler
         if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdown();
+            try {
+                scheduler.shutdown();
+                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+                addLogMessage("Scheduler terminated", LogType.SUCCESS);
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+                addLogMessage("Scheduler shutdown interrupted", LogType.WARNING);
+            }
         }
 
         // Reset UI state
@@ -436,12 +673,32 @@ public class ServerInterfaceController {
 
             // Reset client count
             connectedClients.set(0);
-            clientCountLabel.setText("0");
+            if (clientCountLabel != null) {
+                clientCountLabel.setText("0");
+            }
 
-            serverStatusLabel.setText("Stopped");
-            serverStatusLabel.setTextFill(Color.RED);
-            startTimeLabel.setText("-");
-            uptimeLabel.setText("-");
+            if (serverStatusLabel != null) {
+                serverStatusLabel.setText("Stopped");
+                serverStatusLabel.setTextFill(Color.RED);
+            }
+
+            if (startTimeLabel != null) {
+                startTimeLabel.setText("-");
+            }
+
+            if (uptimeLabel != null) {
+                uptimeLabel.setText("-");
+            }
+
+            // Riabilita i pulsanti di avvio
+            if (startButton != null) {
+                startButton.setDisable(false);
+            }
+
+            if (startNgrokButton != null) {
+                boolean postgresRunning = isPostgresRunning();
+                startNgrokButton.setDisable(!postgresRunning);
+            }
         });
 
         addLogMessage("Server stopped, database cleaned, and all clients notified", LogType.SUCCESS);

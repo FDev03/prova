@@ -5,8 +5,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import java.io.File;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -15,6 +15,7 @@ import java.sql.*;
 public class Server extends Application {
 
     private ServerInterfaceController controller;
+    private NgrokManager ngrokManager;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -25,11 +26,19 @@ public class Server extends Application {
         // Get controller reference
         controller = loader.getController();
 
+        // Inizializza NgrokManager
+        ngrokManager = new NgrokManager();
+
         // Add shutdown hook for clean server shutdown
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (controller != null) {
                 controller.cleanupDatabaseAndShutdown();
                 deleteDownloadedFiles();
+
+                // Assicurati di arrestare il tunnel ngrok quando l'applicazione si chiude
+                if (ngrokManager != null) {
+                    ngrokManager.stopTunnel();
+                }
             }
         }));
 
@@ -46,6 +55,11 @@ public class Server extends Application {
             if (controller != null) {
                 controller.cleanupDatabaseAndShutdown();
                 deleteDownloadedFiles();
+
+                // Arresta il tunnel ngrok quando l'utente chiude la finestra
+                if (ngrokManager != null) {
+                    ngrokManager.stopTunnel();
+                }
             }
         });
 
@@ -127,6 +141,30 @@ public class Server extends Application {
         }
     }
 
+    /**
+     * Checks if another server is running through ngrok tunnel
+     * @param ngrokUrl ngrok URL to check
+     * @param ngrokPort ngrok port to check
+     * @return true if another server is active via ngrok
+     */
+    public static boolean isAnotherServerRunningViaConnection(String ngrokUrl, int ngrokPort) {
+        if (ngrokUrl == null || ngrokPort <= 0) {
+            return false;
+        }
+
+        String dbUrl = "jdbc:postgresql://" + ngrokUrl + ":" + ngrokPort + "/book_recommender";
+
+        try (Connection conn = DriverManager.getConnection(dbUrl, "book_reader", "reader2024")) {
+            // Successfully connected, check if tables exist
+            DatabaseMetaData meta = conn.getMetaData();
+            ResultSet tables = meta.getTables(null, null, "users", null);
+            return tables.next();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
     public static void main(String[] args) {
         launch(args);
-    }}
+    }
+}
