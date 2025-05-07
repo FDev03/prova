@@ -55,7 +55,7 @@ public class NgrokManager {
             return tunnelActive;
         } catch (Exception e) {
             System.err.println("Errore nell'avvio di ngrok: " + e.getMessage());
-            e.printStackTrace();
+
             return false;
         }
     }
@@ -63,12 +63,23 @@ public class NgrokManager {
     /**
      * Crea la cartella per contenere ngrok
      */
+    /**
+     * Crea la cartella per contenere ngrok e imposta i permessi appropriati
+     */
     private void createNgrokFolder() {
         File folder = new File(NGROK_FOLDER);
         if (!folder.exists()) {
-            folder.mkdir();
-            System.out.println("Cartella ngrok creata");
-        }
+            boolean created = folder.mkdir();
+            if (created) {
+
+                // Imposta i permessi appropriati sulla cartella
+                try {
+                    if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+                        // Su sistemi Unix-like, imposta i permessi a 755 (rwxr-xr-x)
+                        Runtime.getRuntime().exec("chmod 755 " + NGROK_FOLDER);
+                    }
+                } catch (IOException e) {
+               }}}
     }
 
     /**
@@ -101,9 +112,7 @@ public class NgrokManager {
      * @throws IOException in caso di errori durante il download o l'installazione
      */
     private void downloadAndInstallNgrok() throws IOException {
-        System.out.println("Installazione di ngrok in corso...");
-
-        // Determina l'URL di download in base al sistema operativo e all'architettura
+      // Determina l'URL di download in base al sistema operativo e all'architettura
         String downloadUrl = getNgrokDownloadUrl();
 
         // Scarica il file zip di ngrok
@@ -111,15 +120,10 @@ public class NgrokManager {
         downloadFile(downloadUrl, zipFilePath);
 
         // Estrai il file zip
-        extractZipFile(zipFilePath, NGROK_FOLDER);
+        extractZipFile(zipFilePath);
 
         // Imposta i permessi di esecuzione su sistemi Unix-like
         setExecutablePermissions();
-
-        // Elimina il file zip
-        new File(zipFilePath).delete();
-
-        System.out.println("Ngrok installato con successo");
     }
 
     /**
@@ -170,17 +174,17 @@ public class NgrokManager {
 
     /**
      * Estrae un file zip
+     *
      * @param zipFilePath il percorso del file zip
-     * @param destDir la directory di destinazione
      * @throws IOException in caso di errori durante l'estrazione
      */
-    private void extractZipFile(String zipFilePath, String destDir) throws IOException {
+    private void extractZipFile(String zipFilePath) throws IOException {
         byte[] buffer = new byte[1024];
         ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFilePath));
         ZipEntry zipEntry = zis.getNextEntry();
 
         while (zipEntry != null) {
-            File newFile = new File(destDir, zipEntry.getName());
+            File newFile = new File(NgrokManager.NGROK_FOLDER, zipEntry.getName());
             FileOutputStream fos = new FileOutputStream(newFile);
             int len;
             while ((len = zis.read(buffer)) > 0) {
@@ -244,7 +248,7 @@ public class NgrokManager {
                 while ((line = reader.readLine()) != null) {
                     error.append(line).append("\n");
                 }
-                throw new IOException("Impossibile configurare l'authtoken di ngrok: " + error.toString());
+                throw new IOException("Impossibile configurare l'authtoken di ngrok: " + error);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -271,12 +275,11 @@ public class NgrokManager {
             while ((line = reader.readLine()) != null) {
                 output.append(line).append("\n");
             }
-            throw new IOException("Ngrok non è stato avviato correttamente: " + output.toString());
+            throw new IOException("Ngrok non è stato avviato correttamente: " + output);
         }
 
         tunnelActive = true;
-        System.out.println("Tunnel ngrok avviato sulla porta " + postgresPort);
-    }
+ }
 
     /**
      * Ottiene l'URL pubblico generato da ngrok
@@ -306,7 +309,6 @@ public class NgrokManager {
         }
 
         String jsonResponse = response.toString();
-        System.out.println("Risposta API ngrok: " + jsonResponse);
 
         // Prova diverse espressioni regolari per trovare l'URL pubblico
         // Pattern per il formato: "public_url":"tcp://0.tcp.ngrok.io:12345"
@@ -316,8 +318,7 @@ public class NgrokManager {
         if (matcher1.find()) {
             publicUrl = matcher1.group(1);
             publicPort = Integer.parseInt(matcher1.group(2));
-            System.out.println("URL pubblico ngrok trovato (formato 1): tcp://" + publicUrl + ":" + publicPort);
-            return;
+          return;
         }
 
         // Pattern alternativo per il formato: "public_url":"tcp://0.tcp.eu.ngrok.io:12345"
@@ -327,8 +328,7 @@ public class NgrokManager {
         if (matcher2.find()) {
             publicUrl = matcher2.group(1);
             publicPort = Integer.parseInt(matcher2.group(2));
-            System.out.println("URL pubblico ngrok trovato (formato 2): tcp://" + publicUrl + ":" + publicPort);
-            return;
+         return;
         }
 
         // Tentativo generico di trovare qualsiasi URL ngrok
@@ -338,8 +338,7 @@ public class NgrokManager {
         if (matcher3.find()) {
             publicUrl = matcher3.group(1);
             publicPort = Integer.parseInt(matcher3.group(2));
-            System.out.println("URL pubblico ngrok trovato (formato generico): tcp://" + publicUrl + ":" + publicPort);
-            return;
+           return;
         }
 
         throw new IOException("Impossibile trovare l'URL pubblico nella risposta di ngrok: " + jsonResponse);
@@ -359,8 +358,7 @@ public class NgrokManager {
                 Thread.currentThread().interrupt();
             }
             tunnelActive = false;
-            System.out.println("Tunnel ngrok arrestato");
-        }
+       }
     }
 
     /**

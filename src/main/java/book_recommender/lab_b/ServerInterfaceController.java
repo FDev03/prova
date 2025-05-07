@@ -7,12 +7,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 import java.io.PrintWriter;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
-
 import java.io.*;
 import java.net.*;
 import java.nio.channels.Channels;
@@ -43,7 +40,7 @@ public class ServerInterfaceController {
     private NgrokManager ngrokManager;
     private boolean ngrokEnabled = false;
 
-    private List<Socket> connectedClientSockets = new ArrayList<>();
+    private final List<Socket> connectedClientSockets = new ArrayList<>();
     // Directory temporanea per i file scaricati
     private static final String TEMP_DIR = "temp_data/";
 
@@ -88,12 +85,11 @@ public class ServerInterfaceController {
     private Thread serverThread;
     private LocalDateTime serverStartTime;
     private ScheduledExecutorService scheduler;
-    private AtomicInteger connectedClients = new AtomicInteger(0);
-    private boolean dbExists = false;
+    private final AtomicInteger connectedClients = new AtomicInteger(0);
     private boolean serverRunning = false;
     @FXML
     public void initialize() {
-        // Create temp directory if it doesn't exist
+        // Create a temp directory if it doesn't exist
         new File(TEMP_DIR).mkdirs();
 
         // Initialize scheduler for updating uptime
@@ -140,7 +136,7 @@ public class ServerInterfaceController {
             ngrokUrlField.setContextMenu(contextMenu);
         }
 
-        // Disable fields based on initial state
+        // Disable fields based on the initial state
         updateUIState(false);
 
         // Hide the log container to remove scrolling log
@@ -149,7 +145,7 @@ public class ServerInterfaceController {
             logContainer.setManaged(false);
         }
 
-        // Add initial log message (now only to console)
+        // Add the initial log message (now only to the console)
         addLogMessage("Server interface initialized", LogType.INFO);
 
         // Controlla se PostgreSQL è installato e in esecuzione
@@ -229,14 +225,14 @@ public class ServerInterfaceController {
 
         addLogMessage("Checking for existing server...", LogType.INFO);
 
-        // Run check in background thread
+        // Run check in the background thread
         new Thread(() -> {
             String dbUrl = dbUrlField.getText();
             String dbUser = dbUserField.getText();
             String dbPassword = dbPasswordField.getText();
 
             try {
-                // First check if the PostgreSQL is installed and running
+                // First, check if the PostgreSQL is installed and running
                 updateProgress(0.1, "Checking PostgreSQL status...");
                 if (!isPostgresInstalled()) {
                     addLogMessage("PostgreSQL not installed, attempting to install...", LogType.WARNING);
@@ -267,11 +263,11 @@ public class ServerInterfaceController {
                 // Check if another server is already running
                 updateProgress(0.2, "Checking for existing server...");
                 if (checkExistingServer(dbUrl)) {
-                    // Connect to existing server
+                    // Connect to an existing server
                     updateProgress(0.3, "Connecting to existing server...");
                     connectToExistingServer(dbUrl, dbUser, dbPassword);
                 } else {
-                    // Start new server
+                    // Start a new server
                     serverRunning = true;
                     updateUIState(true);
 
@@ -317,10 +313,7 @@ public class ServerInterfaceController {
             return false;
         }
     }
-    private void initializeNgrok() {
-        ngrokManager = new NgrokManager();
-        updateNgrokUIState(false);
-    }
+
     @FXML
     public void onStartNgrok(ActionEvent event) {
         if (ngrokEnabled) return;
@@ -401,10 +394,10 @@ public class ServerInterfaceController {
 
             addLogMessage("Connected to existing server database", LogType.SUCCESS);
 
-            // Update UI to reflect we're connected to existing server
+            // Update UI to reflect we're connected to the existing server
             serverRunning = true;
 
-            // Get current server start time from database if available
+            // Get the current server start time from a database if available
             try {
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT server_start_time FROM server_info LIMIT 1");
@@ -419,7 +412,7 @@ public class ServerInterfaceController {
                     serverStartTime = LocalDateTime.now(); // Fallback
                 }
             } catch (SQLException e) {
-                // If table doesn't exist, just use current time
+                // If a table doesn't exist, just use the current time
                 serverStartTime = LocalDateTime.now();
             }
 
@@ -459,7 +452,7 @@ public class ServerInterfaceController {
      * Starts a thread to periodically update the connected client count
      */
     private void startClientCountMonitoring() {
-        // Scheduler to update client count every 3 seconds
+        // Scheduler to update the client count every 3 seconds
         ScheduledExecutorService clientMonitor = Executors.newScheduledThreadPool(1);
         clientMonitor.scheduleAtFixedRate(() -> {
             if (!serverRunning) {
@@ -507,7 +500,7 @@ public class ServerInterfaceController {
             updateProgress(0.0, "Initializing server...");
             addLogMessage("Server initialization started", LogType.INFO);
 
-            // Start socket server early
+            // Start a socket server early
             updateProgress(0.1, "Starting socket server...");
             startSocketServer();
             addLogMessage("Socket server started on port 8888", LogType.SUCCESS);
@@ -544,7 +537,7 @@ public class ServerInterfaceController {
                 updateProgress(0.3, "Downloading data files...");
                 downloadAllFiles();
 
-                // Step 4: Always initialize database
+                // Step 4: Always initialize a database
                 updateProgress(0.5, "Recreating database tables...");
                 initializeDatabase(dbUrl, finalDbUser, finalDbPassword);
 
@@ -578,10 +571,7 @@ public class ServerInterfaceController {
     }
 
     /**
-     * Notifies all clients of shutdown, cleans up database and shuts down server
-     */
-    /**
-     * Notifies all clients of shutdown, cleans up database and shuts down server
+     * Notifies all clients of a shutdown, cleans up a database and shuts down the server
      */
     public void cleanupDatabaseAndShutdown() {
         if (!serverRunning) return;
@@ -633,16 +623,16 @@ public class ServerInterfaceController {
             }
         }
 
-        // Clean up database
+        // Clean up a database
         cleanDatabase();
 
         // Delete all downloaded files
         deleteTemporaryFiles();
 
-        // Now proceed with normal shutdown
+        // Now proceed with a normal shutdown
         serverRunning = false;
 
-        // Close server socket if it exists
+        // Close a server socket if it exists
         if (serverSocket != null && !serverSocket.isClosed()) {
             try {
                 serverSocket.close();
@@ -717,7 +707,7 @@ public class ServerInterfaceController {
                             boolean deleted = file.delete();
                             if (!deleted) {
                                 addLogMessage("Failed to delete file: " + file.getName(), LogType.WARNING);
-                                // Try force delete on exit
+                                // Try to force to delete it on exit
                                 file.deleteOnExit();
                             }
                         }
@@ -827,7 +817,7 @@ public class ServerInterfaceController {
 
                 // Create tables
                 String[] createTableStatements = {
-                        // Users table
+                        // Users' table
                         "CREATE TABLE IF NOT EXISTS users (" +
                                 "    user_id VARCHAR(8) PRIMARY KEY," +
                                 "    full_name VARCHAR(100) NOT NULL," +
@@ -847,7 +837,7 @@ public class ServerInterfaceController {
                                 "    UNIQUE(title, authors)" +
                                 ")",
 
-                        // Libraries table
+                        // Libraries' table
                         "CREATE TABLE IF NOT EXISTS libraries (" +
                                 "    id SERIAL PRIMARY KEY," +
                                 "    user_id VARCHAR(8) REFERENCES users(user_id) ON DELETE CASCADE," +
@@ -960,7 +950,7 @@ public class ServerInterfaceController {
         try (PreparedStatement pstmt = conn.prepareStatement(sql);
              BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
 
-            String line = reader.readLine(); // Read header line
+            String line = reader.readLine(); // Read the header line
             if (line == null) return;
 
             while ((line = reader.readLine()) != null) {
@@ -1031,7 +1021,7 @@ public class ServerInterfaceController {
 
         try {
             // Il comando di installazione dipende dal sistema operativo
-            String installCommand;
+
             String osName = System.getProperty("os.name").toLowerCase();
 
             if (osName.contains("win")) {
@@ -1104,7 +1094,7 @@ public class ServerInterfaceController {
                 }
 
                 if (proceed.get()) {
-                    Process process = Runtime.getRuntime().exec("pkexec apt-get -y install postgresql postgresql-contrib");
+                    Process process = Runtime.getRuntime().exec("pk exec apt-get -y install postgresql postgresql-contrib");
                     int exitCode = process.waitFor();
                     if (exitCode == 0) {
                         addLogMessage("PostgreSQL installato con successo", LogType.SUCCESS);
@@ -1220,7 +1210,7 @@ public class ServerInterfaceController {
                         Process process = Runtime.getRuntime().exec("pg_ctl -D /opt/homebrew/var/postgresql@14 start");
                         process.waitFor(10, TimeUnit.SECONDS);
 
-                        // Leggi l'output del processo
+                        // Leggi l'uscita del processo
                         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                         String line;
                         while ((line = reader.readLine()) != null) {
@@ -1282,9 +1272,9 @@ public class ServerInterfaceController {
                         "sudo systemctl start postgresql",
                         "sudo service postgresql start",
                         "sudo /etc/init.d/postgresql start",
-                        "sudo pg_ctlcluster 14 main start",
-                        "sudo pg_ctlcluster 15 main start",
-                        "sudo pg_ctlcluster 16 main start"
+                        "sudo pg_cluster 14 main start",
+                        "sudo pg_cluster 15 main start",
+                        "sudo pg_cluster 16 main start"
                 };
 
                 for (String command : linuxCommands) {
@@ -1359,7 +1349,7 @@ public class ServerInterfaceController {
                 String checkCommand;
                 if (System.getProperty("os.name").toLowerCase().contains("win")) {
                     // Windows
-                    checkCommand = "cmd /c pg_isready";
+                    checkCommand = "cmd /c pg_ready";
                 } else {
                     // macOS o Linux
                     checkCommand = "pg_isready";
@@ -1394,7 +1384,7 @@ public class ServerInterfaceController {
         try (PreparedStatement pstmt = conn.prepareStatement(sql);
              BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
 
-            String line = reader.readLine(); // Read header line
+            String line = reader.readLine(); // Read the header line
             if (line == null) return;
 
             while ((line = reader.readLine()) != null) {
@@ -1434,7 +1424,7 @@ public class ServerInterfaceController {
         try (PreparedStatement pstmt = conn.prepareStatement(sql);
              BufferedReader reader = new BufferedReader(new FileReader(TEMP_DIR + "UtentiRegistrati.csv"))) {
 
-            String line = reader.readLine(); // Read header
+            String line;
 
             int userCount = 0;
             while ((line = reader.readLine()) != null) {
@@ -1479,7 +1469,7 @@ public class ServerInterfaceController {
              PreparedStatement pstmtFindBook = conn.prepareStatement(findBookSql);
              BufferedReader reader = new BufferedReader(new FileReader(TEMP_DIR + "Librerie.dati.csv"))) {
 
-            String line = reader.readLine(); // Read header
+            String line;
 
             while ((line = reader.readLine()) != null) {
                 String[] fields = parseCsvLine(line);
@@ -1508,7 +1498,7 @@ public class ServerInterfaceController {
                         int libraryId = rs.getInt(1);
                         libraryCount++;
 
-                        // Add books to library (remaining fields are book titles)
+                        // Add books to a library (remaining fields are book titles)
                         for (int i = 2; i < fields.length && i < 12; i++) {
                             String bookField = fields[i].trim().replaceAll("^\"|\"$", "");
                             if (!bookField.equals("null") && !bookField.isEmpty()) {
@@ -1599,7 +1589,7 @@ public class ServerInterfaceController {
     private void importRecommendations(Connection conn) throws SQLException, IOException {
         addLogMessage("Checking for recommendations data...", LogType.INFO);
 
-        // First check if ConsigliLibri.dati.csv exists and has content
+        // First, check if ConsigliLibri.dati.csv exists and has content
         File file = new File(TEMP_DIR + "ConsigliLibri.dati.csv");
         if (!file.exists() || file.length() == 0) {
             addLogMessage("ConsigliLibri.dati.csv is empty or does not exist. Skipping...", LogType.WARNING);
@@ -1624,13 +1614,13 @@ public class ServerInterfaceController {
                 addLogMessage("Server socket created on port " + port + " (accessible from network)", LogType.SUCCESS);
                 success = true;
 
-                // Start thread for accepting client connections
+                // Start a thread for accepting client connections
                 new Thread(() -> {
                     while (serverRunning) {
                         try {
                             Socket clientSocket = serverSocket.accept();
 
-                            // Rest of your code remains the same
+                            // The rest of your code remains the same
                             // ...
 
                         } catch (IOException e) {
@@ -1665,7 +1655,7 @@ public class ServerInterfaceController {
             // Set up input stream for reading commands
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-            // Wait for client to disconnect
+            // Wait for a client to disconnect
             while (!clientSocket.isClosed() && serverRunning) {
                 try {
                     // Check for messages
@@ -1690,7 +1680,7 @@ public class ServerInterfaceController {
                 // Ignore
             }
 
-            // Remove from list of connected clients
+            // Remove from a list of connected clients
             synchronized(connectedClientSockets) {
                 connectedClientSockets.remove(clientSocket);
             }
@@ -1727,10 +1717,10 @@ public class ServerInterfaceController {
             }
         }
 
-        // Now proceed with normal shutdown
+        // Now proceed with a normal shutdown
         serverRunning = false;
 
-        // Close server socket if it exists
+        // Close a server socket if it exists
         if (serverSocket != null && !serverSocket.isClosed()) {
             try {
                 serverSocket.close();
@@ -1761,7 +1751,7 @@ public class ServerInterfaceController {
         addLogMessage("Server stopped and all clients notified", LogType.SUCCESS);
     }
     private String[] parseCsvLine(String line) {
-        // First try to split by tabs if the line contains tabs
+        // First, try to split by tabs if the line contains tabs
         if (line.contains("\t")) {
             return line.split("\t");
         }
@@ -1787,7 +1777,7 @@ public class ServerInterfaceController {
     }
 
     private void startUptimeCounter() {
-        // Cancel existing scheduler if any
+        // Cancel the existing scheduler if any
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
         }
@@ -1842,7 +1832,6 @@ public class ServerInterfaceController {
 
     private void addLogMessage(String message, LogType logType) {
         // Log to console instead of UI
-        System.out.println("[" + getCurrentTimestamp() + "] [" + logType.name() + "] " + message);
 
 
     }
@@ -1863,8 +1852,6 @@ public class ServerInterfaceController {
             this.color = color;
         }
 
-        public Color getColor() {
-            return color;
-        }
+
     }
 }

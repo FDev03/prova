@@ -9,7 +9,6 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.sql.*;
 
 public class Server extends Application {
@@ -29,7 +28,7 @@ public class Server extends Application {
         // Inizializza NgrokManager
         ngrokManager = new NgrokManager();
 
-        // Add shutdown hook for clean server shutdown
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (controller != null) {
                 controller.cleanupDatabaseAndShutdown();
@@ -74,7 +73,7 @@ public class Server extends Application {
      * Delete all downloaded files from temp directory when server shuts down
      */
     private void deleteDownloadedFiles() {
-        try {
+
             File tempDir = new File("temp_data");
             if (tempDir.exists() && tempDir.isDirectory()) {
                 File[] files = tempDir.listFiles();
@@ -83,8 +82,7 @@ public class Server extends Application {
                         if (file.isFile()) {
                             boolean deleted = file.delete();
                             if (!deleted) {
-                                System.err.println("Failed to delete file: " + file.getName());
-                                // Try force delete on exit
+                         // Try to force to delete it on exit
                                 file.deleteOnExit();
                             }
                         }
@@ -97,9 +95,7 @@ public class Server extends Application {
                     tempDir.deleteOnExit();
                 }
             }
-        } catch (Exception e) {
-            System.err.println("Error deleting temp files: " + e.getMessage());
-        }
+
     }
 
     /**
@@ -141,28 +137,6 @@ public class Server extends Application {
         }
     }
 
-    /**
-     * Checks if another server is running through ngrok tunnel
-     * @param ngrokUrl ngrok URL to check
-     * @param ngrokPort ngrok port to check
-     * @return true if another server is active via ngrok
-     */
-    public static boolean isAnotherServerRunningViaConnection(String ngrokUrl, int ngrokPort) {
-        if (ngrokUrl == null || ngrokPort <= 0) {
-            return false;
-        }
-
-        String dbUrl = "jdbc:postgresql://" + ngrokUrl + ":" + ngrokPort + "/book_recommender";
-
-        try (Connection conn = DriverManager.getConnection(dbUrl, "book_reader", "reader2024")) {
-            // Successfully connected, check if tables exist
-            DatabaseMetaData meta = conn.getMetaData();
-            ResultSet tables = meta.getTables(null, null, "users", null);
-            return tables.next();
-        } catch (SQLException e) {
-            return false;
-        }
-    }
 
     public static void main(String[] args) {
         launch(args);

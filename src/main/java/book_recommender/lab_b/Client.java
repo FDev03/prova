@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,7 +33,7 @@ public class Client extends Application {
     public static final double MIN_HEIGHT = 400.0;
 
     // ID univoco per questo client
-    private String clientId = UUID.randomUUID().toString();
+    private final String clientId = UUID.randomUUID().toString();
     private DatabaseManager dbManager;
 
     // Socket connection to server
@@ -70,7 +71,7 @@ public class Client extends Application {
                 return;
             }
 
-            // Then establish database connection
+            // Then establish a database connection
             dbManager = DatabaseManager.createRemoteInstance(dbUrl, dbUser, dbPassword);
 
             // Register client connection
@@ -86,10 +87,10 @@ public class Client extends Application {
             return;
         }
 
-        // Load main page
-        Parent root = FXMLLoader.load(getClass().getResource("/book_recommender/lab_b/homepage.fxml"));
+        // Load the main page
+        Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("/book_recommender/lab_b/homepage.fxml")));
 
-        // Set title and scene with initial dimensions
+        // Set the title and scene with initial dimensions
         primaryStage.setTitle("Book Recommender - Client");
         Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
         primaryStage.setScene(scene);
@@ -155,7 +156,7 @@ public class Client extends Application {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        // Campi di input
+        // Campi di ingresso
         TextField hostField = new TextField(serverAddress);
         if (useNgrok) {
             hostField.setPromptText("Hostname ngrok (senza tcp://)");
@@ -191,8 +192,8 @@ public class Client extends Application {
         // Aggiunge la griglia al dialog
         dialog.getDialogPane().setContent(grid);
 
-        // Opzionale: preseleziona il primo campo
-        Platform.runLater(() -> hostField.requestFocus());
+        // Opzionale: preselezione il primo campo
+        Platform.runLater(hostField::requestFocus);
 
         // Mostra il dialog e aspetta che l'utente faccia una scelta
         Optional<ButtonType> result = dialog.showAndWait();
@@ -210,7 +211,7 @@ public class Client extends Application {
                 return false;
             }
 
-            // Costruisci l'URL di connessione JDBC
+            // Costruisci curl's di connessione JDBC
             dbUrl = "jdbc:postgresql://" + host + ":" + port + "/" + dbName;
             return true;
         }
@@ -230,7 +231,7 @@ public class Client extends Application {
         try {
             serverSocket = new Socket(serverAddress, 8888);
         } catch (IOException e) {
-            // If local connection fails, try asking the user for the server address using JavaFX dialog
+            // If local connection fails, try asking the user for the server address using the JavaFX dialog
 
             // Create a TextInputDialog
             TextInputDialog dialog = new TextInputDialog("192.168.1.1");
@@ -240,16 +241,11 @@ public class Client extends Application {
 
             // Traditional JavaFX way to get the response value
             Optional<String> result = dialog.showAndWait();
-            if (result.isPresent()) {
+
                 serverAddress = result.get();
-                if (serverAddress != null && !serverAddress.trim().isEmpty()) {
-                    serverSocket = new Socket(serverAddress, 8888);
-                } else {
-                    throw new IOException("No server address provided");
-                }
-            } else {
-                throw new IOException("No server address provided");
-            }
+
+                serverSocket = new Socket(serverAddress, 8888);
+
         }
     }
 
@@ -298,7 +294,7 @@ public class Client extends Application {
         alert.setHeaderText("Server Spento");
         alert.setContentText("Il server è stato spento. L'applicazione verrà chiusa. Riavviare il server prima di riaprire il client.");
 
-        // Wait for alert to be closed before exiting
+        // Wait for the alert to be closed before exiting
         alert.showAndWait().ifPresent(response -> {
             Platform.exit();
             System.exit(0);
@@ -314,7 +310,7 @@ public class Client extends Application {
         alert.setHeaderText(header);
         alert.setContentText(content);
 
-        // Wait for alert to be closed before exiting
+        // Wait for the alert to be closed before exiting
         alert.showAndWait().ifPresent(response -> {
             Platform.exit();
             System.exit(1);
@@ -326,7 +322,7 @@ public class Client extends Application {
      */
     private void registerClientConnection(boolean isConnecting) {
         try {
-            // Create shorter client ID (just UUID, without hostname and IP)
+            // Create a shorter client ID (just UUID, without hostname and IP)
             String clientIdShort = clientId.substring(0, 32); // Take only UUID
 
             // Update active_clients table in database
@@ -340,7 +336,7 @@ public class Client extends Application {
 
     @Override
     public void stop() {
-        // Remove client from count when application terminates
+        // Remove the client from count when the application terminates
         try {
             if (dbManager != null && !serverShutdownDetected) {
                 // Register client disconnection
@@ -361,7 +357,6 @@ public class Client extends Application {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        System.out.println("Book Recommender Client");
         launch(args);
     }
 }
