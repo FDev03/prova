@@ -36,7 +36,8 @@ public class ServerInterfaceController {
     private static final String LIBRERIE_FILE_ID = "1r0jBnnG-aKBQZ76eyKxzWpsL1aLThZW3";
     private static final String DATA_FILE_ID = "1jX6zWXBjf6-eT1y9ypv55tfEtawz86Cz";
     private static final String CONSIGLI_FILE_ID = "1hLT7yvnA2hV6Rg_oTnFsywyPaPstjKo8";
-    // Add at the top of the class with other fields
+
+    private ScheduledExecutorService clientMonitorScheduler;  // Add at the top of the class with other fields
     private NgrokManager ngrokManager;
     private boolean ngrokEnabled = false;
     private TextField dbUrlField; // Not in FXML anymore, but still needed
@@ -92,7 +93,37 @@ public class ServerInterfaceController {
     private ScheduledExecutorService scheduler;
     private final AtomicInteger connectedClients = new AtomicInteger(0);
     private boolean serverRunning = false;
+// Modifica in ServerInterfaceController.java
 
+    @FXML
+    public void onCopyNgrokHost(ActionEvent event) {
+        // Copia solo l'host negli appunti
+        String hostInfo = ngrokManager.getPublicUrl();
+        if (hostInfo != null) {
+            Clipboard clipboard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.putString(hostInfo);
+            clipboard.setContent(content);
+            addLogMessage("Host ngrok copiato negli appunti", LogType.INFO);
+        } else {
+            addLogMessage("Ngrok non attivo, impossibile copiare l'host", LogType.WARNING);
+        }
+    }
+
+    @FXML
+    public void onCopyNgrokPort(ActionEvent event) {
+        // Copia solo la porta negli appunti
+        int portInfo = ngrokManager.getPublicPort();
+        if (portInfo > 0) {
+            Clipboard clipboard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.putString(String.valueOf(portInfo));
+            clipboard.setContent(content);
+            addLogMessage("Porta ngrok copiata negli appunti", LogType.INFO);
+        } else {
+            addLogMessage("Ngrok non attivo, impossibile copiare la porta", LogType.WARNING);
+        }
+    }
     @FXML
     public void initialize() {
         // Create a temp directory if it doesn't exist
@@ -143,11 +174,9 @@ public class ServerInterfaceController {
             ContextMenu contextMenu = new ContextMenu();
             MenuItem copyItem = new MenuItem("Copia informazioni di connessione");
             copyItem.setOnAction(e -> {
-                String connectionInfo = getNgrokConnectionInfo();
-                Clipboard clipboard = Clipboard.getSystemClipboard();
+              Clipboard clipboard = Clipboard.getSystemClipboard();
                 ClipboardContent content = new ClipboardContent();
-                content.putString(connectionInfo);
-                clipboard.setContent(content);
+               clipboard.setContent(content);
                 addLogMessage("Informazioni di connessione ngrok copiate negli appunti", LogType.INFO);
             });
             contextMenu.getItems().add(copyItem);
@@ -160,34 +189,14 @@ public class ServerInterfaceController {
 
     @FXML
     public void onCopyNgrokInfo(ActionEvent event) {
-        String connectionInfo = getNgrokConnectionInfo();
 
         // Copia negli appunti
         javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
         javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
-        content.putString(connectionInfo);
+
         clipboard.setContent(content);
 
         addLogMessage("Informazioni di connessione ngrok copiate negli appunti", LogType.INFO);
-    }
-
-    /**
-     * Gets a formatted string with Ngrok connection information
-     * @return String containing connection details
-     */
-    private String getNgrokConnectionInfo() {
-        if (!ngrokEnabled || ngrokManager == null) {
-            return "Ngrok non attivo";
-        }
-
-        String publicUrl = ngrokManager.getPublicUrl();
-        int publicPort = ngrokManager.getPublicPort();
-
-        return "Host Ngrok: " + publicUrl + "\n" +
-                "Porta Ngrok: " + publicPort + "\n" +
-                "Database: book_recommender\n" +
-                "Username: book_admin_8530\n" +
-                "Password: CPuc#@r-zbKY";
     }
 
 
@@ -256,6 +265,12 @@ public class ServerInterfaceController {
                     connectToExistingServer(dbUrl, dbUser, dbPassword);
                 } else {
                     // Start a new server
+                    Platform.runLater(() -> {
+                        serverStatusLabel.setText("Starting...");
+                        serverStatusLabel.setTextFill(Color.BLUE);
+                    });
+
+                    // Imposta lo stato del server come attivo prima di avviare il thread
                     serverRunning = true;
                     updateUIState(true);
 
@@ -278,6 +293,10 @@ public class ServerInterfaceController {
                 Platform.runLater(() -> {
                     addLogMessage("Error: " + e.getMessage(), LogType.ERROR);
                     startButton.setDisable(false);
+
+                    // Reset server state in case of error
+                    serverRunning = false;
+                    updateUIState(false);
                 });
             }
         }).start();
@@ -446,11 +465,16 @@ public class ServerInterfaceController {
      * Starts a thread to periodically update the connected client count
      */
     private void startClientCountMonitoring() {
-        // Scheduler to update the client count every 2 seconds
-        ScheduledExecutorService clientMonitor = Executors.newScheduledThreadPool(1);
-        clientMonitor.scheduleAtFixedRate(() -> {
+        // Prima interrompi qualsiasi scheduler di monitoraggio esistente
+        stopClientCountMonitoring();
+
+        // Crea un nuovo scheduler
+        clientMonitorScheduler = Executors.newScheduledThreadPool(1);
+
+        clientMonitorScheduler.scheduleAtFixedRate(() -> {
+            // Controlla se il server è ancora in esecuzione prima di eseguire l'aggiornamento
             if (!serverRunning) {
-                clientMonitor.shutdown();
+                stopClientCountMonitoring();
                 return;
             }
 
@@ -465,12 +489,31 @@ public class ServerInterfaceController {
                     addLogMessage("Updated client count: " + count, LogType.INFO);
                 });
             } catch (SQLException e) {
-                // Log error but continue trying
+                // Log error but continue trying if server is still running
                 addLogMessage("Error updating client count: " + e.getMessage(), LogType.ERROR);
             }
         }, 0, 2, TimeUnit.SECONDS);
-    }
 
+        addLogMessage("Client monitoring started", LogType.INFO);
+    }
+    /**
+     * Stops the client count monitoring thread
+     */
+    private void stopClientCountMonitoring() {
+        if (clientMonitorScheduler != null && !clientMonitorScheduler.isShutdown()) {
+            try {
+                clientMonitorScheduler.shutdown();
+                if (!clientMonitorScheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                    clientMonitorScheduler.shutdownNow();
+                }
+                addLogMessage("Client monitoring stopped", LogType.INFO);
+            } catch (InterruptedException e) {
+                clientMonitorScheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+                addLogMessage("Client monitoring shutdown interrupted", LogType.WARNING);
+            }
+        }
+    }
     @FXML
 
     private void onStopServer(ActionEvent event) {
@@ -647,7 +690,7 @@ public class ServerInterfaceController {
      */
     public void cleanupDatabaseAndShutdown() {
         if (!serverRunning) return;
-
+        stopClientCountMonitoring();
         // Arresta il tunnel ngrok se attivo
         if (ngrokManager != null) {
             try {
@@ -667,7 +710,7 @@ public class ServerInterfaceController {
                         ngrokPortField.setText("");
                     }
                     if (startNgrokButton != null) {
-                        startNgrokButton.setDisable(true);
+                        startNgrokButton.setDisable(false); // Modifica: abilita il pulsante di avvio di ngrok
                     }
                     if (stopNgrokButton != null) {
                         stopNgrokButton.setDisable(true);
@@ -680,16 +723,16 @@ public class ServerInterfaceController {
             }
         }
 
-        // Clean up a database
+        // Clean up del database
         cleanDatabase();
 
-        // Delete all downloaded files
+        // Elimina tutti i file scaricati
         deleteTemporaryFiles();
 
-        // Now proceed with a normal shutdown
+        // Ora procedi con il normale arresto
         serverRunning = false;
 
-        // Close a server socket if it exists
+        // Chiudi il socket del server se esiste
         if (serverSocket != null && !serverSocket.isClosed()) {
             try {
                 serverSocket.close();
@@ -699,7 +742,7 @@ public class ServerInterfaceController {
             }
         }
 
-        // Shutdown scheduler
+        // Arresta lo scheduler
         if (scheduler != null && !scheduler.isShutdown()) {
             try {
                 scheduler.shutdown();
@@ -712,6 +755,12 @@ public class ServerInterfaceController {
                 Thread.currentThread().interrupt();
                 addLogMessage("Scheduler shutdown interrupted", LogType.WARNING);
             }
+        }
+
+        // Reimpostazione delle variabili di stato del server - AGGIUNGI QUESTA SEZIONE
+        if (serverThread != null) {
+            serverThread.interrupt();
+            serverThread = null;
         }
 
         // Reset UI state
@@ -817,19 +866,45 @@ public class ServerInterfaceController {
     }
 
     private void downloadAllFiles() throws IOException {
-        addLogMessage("Downloading files from Google Drive...", LogType.INFO);
+        addLogMessage("Downloading files from Google Drive...", LogType.ERROR);
 
-        downloadFromGoogleDrive(VALUTAZIONI_FILE_ID, "ValutazioniLibri.csv");
-        downloadFromGoogleDrive(UTENTI_FILE_ID, "UtentiRegistrati.csv");
-        downloadFromGoogleDrive(LIBRI_FILE_ID, "Libri.csv");
-        downloadFromGoogleDrive(LIBRERIE_FILE_ID, "Librerie.dati.csv");
-        downloadFromGoogleDrive(DATA_FILE_ID, "Data.csv");
-        downloadFromGoogleDrive(CONSIGLI_FILE_ID, "ConsigliLibri.dati.csv");
+        // Assicurati che la directory temp_data esista prima di iniziare il download
+        File tempDir = new File(TEMP_DIR);
+        if (!tempDir.exists()) {
+            boolean created = tempDir.mkdirs();
+            if (!created) {
+                addLogMessage("Impossibile creare la directory " + TEMP_DIR, LogType.ERROR);
+                throw new IOException("Failed to create directory: " + TEMP_DIR);
+            }
+        }
 
-        addLogMessage("All files downloaded successfully", LogType.SUCCESS);
+        try {
+            downloadFromGoogleDrive(VALUTAZIONI_FILE_ID, "ValutazioniLibri.csv");
+            downloadFromGoogleDrive(UTENTI_FILE_ID, "UtentiRegistrati.csv");
+            downloadFromGoogleDrive(LIBRI_FILE_ID, "Libri.csv");
+            downloadFromGoogleDrive(LIBRERIE_FILE_ID, "Librerie.dati.csv");
+            downloadFromGoogleDrive(DATA_FILE_ID, "Data.csv");
+            downloadFromGoogleDrive(CONSIGLI_FILE_ID, "ConsigliLibri.dati.csv");
+
+            addLogMessage("All files downloaded successfully", LogType.SUCCESS);
+        } catch (IOException e) {
+            addLogMessage("Errore durante il download dei file: " + e.getMessage(), LogType.ERROR);
+            throw e; // Rilancia l'eccezione per gestirla nel metodo chiamante
+        }
     }
-
     private void downloadFromGoogleDrive(String fileId, String fileName) throws IOException {
+        // Assicurati che la directory temp_data esista
+        File tempDir = new File(TEMP_DIR);
+        if (!tempDir.exists()) {
+            boolean created = tempDir.mkdirs(); // Usa mkdirs() invece di mkdir() per creare anche le directory parent se necessario
+            if (created) {
+                addLogMessage("Creata directory " + TEMP_DIR, LogType.INFO);
+            } else {
+                addLogMessage("Impossibile creare la directory " + TEMP_DIR, LogType.ERROR);
+                throw new IOException("Failed to create directory: " + TEMP_DIR);
+            }
+        }
+
         String urlString = "https://drive.google.com/uc?id=" + fileId + "&export=download";
 
         try {
@@ -1903,7 +1978,7 @@ public class ServerInterfaceController {
     }
 
     private enum LogType {
-        INFO(Color.BLUE),
+        INFO(Color.RED),
         SUCCESS(Color.GREEN),
         WARNING(Color.ORANGE),
         ERROR(Color.RED);
@@ -1913,7 +1988,5 @@ public class ServerInterfaceController {
         LogType(Color color) {
             this.color = color;
         }
-
-
     }
 }
