@@ -3,7 +3,7 @@ package book_recommender.lab_b;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-
+//eeeeeeeeeeeeeeegfggggg
 /**
  * Classe di servizio per le operazioni di ricerca e recupero dei libri dal database.
  * Fornisce metodi statici per effettuare diverse tipologie di ricerca sui libri.
