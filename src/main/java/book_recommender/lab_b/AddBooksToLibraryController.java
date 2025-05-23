@@ -14,16 +14,17 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ButtonType;
+
 
 /**
  * Controller per la gestione dell'aggiunta di libri a una libreria.
- * Permette di cercare libri per titolo, autore o autore+anno e aggiungerli alla libreria selezionata.
+ * Consente di cercare libri tramite titolo, autore o combinazione autore/anno
+ * e di aggiungerli alla libreria dell'utente selezionata.
  */
 public class AddBooksToLibraryController implements Initializable {
 
@@ -40,7 +41,6 @@ public class AddBooksToLibraryController implements Initializable {
     @FXML private TextField yearSearchField;
 
     // Pulsanti
-
     @FXML private Button clearAllButton;
     @FXML private Button saveButton;
 
@@ -60,15 +60,16 @@ public class AddBooksToLibraryController implements Initializable {
 
     private DatabaseManager dbManager;
 
+
     /**
-     * Inizializza il controller.
+     * Metodo chiamato durante l'inizializzazione del controller.
+     * Configura l'interfaccia utente, inizializza il database manager e imposta gli handler per gli eventi.
      */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         try {
             dbManager = DatabaseManager.getInstance();
         } catch (SQLException e) {
-            System.err.println("Error initializing database connection: " + e.getMessage());
         }
 
         // Nascondi l'etichetta di errore all'avvio
@@ -85,13 +86,24 @@ public class AddBooksToLibraryController implements Initializable {
 
         // Aggiorna lo stato del bottone clearAllButton
         updateClearAllButtonState();
+
+        // Imposta il colore rosso per il pulsante "Cancella Tutti"
+        clearAllButton.setStyle("-fx-background-color: #ff4136; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;");
     }
 
+    /**
+     * Aggiorna lo stato del pulsante "Cancella Tutti" in base alla presenza di libri selezionati.
+     * Disabilita il pulsante se non ci sono libri selezionati.
+     */
     private void updateClearAllButtonState() {
         boolean hasSelectedBooks = !selectedBooks.isEmpty();
         clearAllButton.setDisable(!hasSelectedBooks);
     }
 
+    /**
+     * Configura la lista dei libri selezionati con funzionalità di selezione multipla
+     * e pulsanti per rimuovere singoli libri dalla selezione.
+     */
     private void setupSelectedBooksListView() {
         selectedBooksListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -99,7 +111,7 @@ public class AddBooksToLibraryController implements Initializable {
             updateClearAllButtonState();
         });
 
-        selectedBooksListView.setCellFactory(new Callback<>() { // usiamo <> invece che <String> perche esplicito
+        selectedBooksListView.setCellFactory(new Callback<>() {
             @Override
             public ListCell<String> call(ListView<String> param) {
                 ListCell<String> cell = new ListCell<>() {
@@ -146,6 +158,10 @@ public class AddBooksToLibraryController implements Initializable {
         });
     }
 
+    /**
+     * Gestisce l'evento di pulizia di tutti i libri selezionati.
+     * Rimuove tutti i libri dalla lista dei selezionati e aggiorna l'interfaccia.
+     */
     @FXML
     public void handleClearAll(ActionEvent event) {
         if (selectedBooks.isEmpty()) {
@@ -159,24 +175,16 @@ public class AddBooksToLibraryController implements Initializable {
         updateSearchResults();
     }
 
+    /**
+     * Gestisce l'evento di salvataggio della libreria.
+     * Verifica che ci sia almeno un libro selezionato, quindi salva la libreria nel database
+     * e naviga al menu utente.
+     */
     @FXML
     public void handleSave(ActionEvent event) {
         if (selectedBooks.isEmpty()) {
-            Alert alert = new Alert(AlertType.WARNING);
-            alert.setTitle("Conferma cancellazione");
-            alert.setHeaderText("Attenzione");
-            alert.setContentText("Non ci sono libri selezionati. La libreria verrà eliminata. Vuoi procedere?");
-
-            ButtonType buttonTypeYes = new ButtonType("Sì");
-            ButtonType buttonTypeNo = new ButtonType("No");
-
-            alert.getButtonTypes().setAll(buttonTypeYes, buttonTypeNo);
-
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.get() == buttonTypeYes) {
-                deleteLibraryAndRelatedData();
-                navigateToUserMenuWithMessage(event, "Libreria '" + libraryName + "' eliminata con successo!");
-            }
+            errorLabel.setText("Devi aggiungere almeno un libro.");
+            errorLabel.setVisible(true);
             return;
         }
 
@@ -185,31 +193,11 @@ public class AddBooksToLibraryController implements Initializable {
         navigateToUserMenuWithMessage(event, "");
     }
 
-    private void deleteLibraryAndRelatedData() {
-        try (Connection conn = dbManager.getConnection()) {
-            conn.setAutoCommit(false);
 
-            try {
-                // Delete library (cascading deletes will handle related data)
-                String deleteLibrarySql = "DELETE FROM libraries WHERE user_id = ? AND library_name = ?";
-                try (PreparedStatement pstmt = conn.prepareStatement(deleteLibrarySql)) {
-                    pstmt.setString(1, userId);
-                    pstmt.setString(2, libraryName);
-                    pstmt.executeUpdate();
-                }
-
-                conn.commit();
-            } catch (SQLException e) {
-                conn.rollback();
-                throw e;
-            }
-        } catch (SQLException e) {
-            System.err.println("Error deleting library: " + e.getMessage());
-            errorLabel.setText("Errore: " + e.getMessage());
-            errorLabel.setVisible(true);
-        }
-    }
-
+    /**
+     * Naviga al menu utente visualizzando un messaggio di stato opzionale.
+     * Carica il controller UserMenuController e imposta i dati dell'utente.
+     */
     private void navigateToUserMenuWithMessage(ActionEvent event, String message) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/userMenu.fxml"));
@@ -225,12 +213,15 @@ public class AddBooksToLibraryController implements Initializable {
             stage.show();
 
         } catch (IOException e) {
-            System.err.println("Errore nel caricamento del menu utente: " + e.getMessage());
             errorLabel.setText("Errore: " + e.getMessage());
             errorLabel.setVisible(true);
         }
     }
 
+    /**
+     * Configura gli handler per la pressione del tasto Invio nei campi di ricerca.
+     * Permette di avviare la ricerca premendo Invio anziché cliccare il pulsante corrispondente.
+     */
     private void setupEnterKeyHandlers() {
         titleSearchField.setOnKeyPressed(event -> {
             if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
@@ -257,6 +248,10 @@ public class AddBooksToLibraryController implements Initializable {
         });
     }
 
+    /**
+     * Imposta i dati dell'utente e della libreria.
+     * Carica i libri esistenti dalla libreria selezionata e aggiorna l'interfaccia.
+     */
     public void setData(String userId, String libraryName) {
         this.userId = userId;
         this.libraryName = libraryName;
@@ -268,6 +263,10 @@ public class AddBooksToLibraryController implements Initializable {
         updateSelectedBooksCount();
     }
 
+    /**
+     * Carica i libri esistenti nella libreria dal database.
+     * Aggiorna la lista dei libri selezionati con quelli già presenti nella libreria.
+     */
     private void loadExistingBooks() {
         try (Connection conn = dbManager.getConnection()) {
             String sql = "SELECT b.title FROM books b " +
@@ -287,12 +286,15 @@ public class AddBooksToLibraryController implements Initializable {
 
             updateSelectedBooksList();
         } catch (SQLException e) {
-            System.err.println("Error loading existing books: " + e.getMessage());
             errorLabel.setText("Errore nel caricamento dei libri esistenti: " + e.getMessage());
             errorLabel.setVisible(true);
         }
     }
 
+    /**
+     * Gestisce la ricerca dei libri per titolo.
+     * Utilizza il servizio BookService per cercare libri corrispondenti al titolo inserito.
+     */
     @FXML
     public void handleTitleSearch(ActionEvent event) {
         String title = titleSearchField.getText().trim();
@@ -306,6 +308,10 @@ public class AddBooksToLibraryController implements Initializable {
         updateSearchResultsContainer(titleResultsContainer, searchResults);
     }
 
+    /**
+     * Gestisce la ricerca dei libri per autore.
+     * Utilizza il servizio BookService per cercare libri corrispondenti all'autore inserito.
+     */
     @FXML
     public void handleAuthorSearch(ActionEvent event) {
         String author = authorSearchField.getText().trim();
@@ -319,6 +325,10 @@ public class AddBooksToLibraryController implements Initializable {
         updateSearchResultsContainer(authorResultsContainer, searchResults);
     }
 
+    /**
+     * Gestisce la ricerca dei libri per autore e anno di pubblicazione.
+     * Verifica che l'anno sia un numero valido prima di effettuare la ricerca.
+     */
     @FXML
     public void handleAuthorYearSearch(ActionEvent event) {
         String author = authorYearSearchField.getText().trim();
@@ -339,6 +349,10 @@ public class AddBooksToLibraryController implements Initializable {
         }
     }
 
+    /**
+     * Aggiorna il container dei risultati di ricerca con i libri trovati.
+     * Mostra un messaggio se non ci sono risultati, altrimenti crea un box per ogni libro.
+     */
     private void updateSearchResultsContainer(VBox container, List<Book> books) {
         container.getChildren().clear();
 
@@ -355,6 +369,10 @@ public class AddBooksToLibraryController implements Initializable {
         }
     }
 
+    /**
+     * Crea un componente grafico che rappresenta un libro nei risultati di ricerca.
+     * Include informazioni sul libro e un pulsante per aggiungerlo/rimuoverlo dalla selezione.
+     */
     private HBox createBookResultBox(Book book) {
         HBox bookBox = new HBox();
         bookBox.setAlignment(Pos.CENTER_LEFT);
@@ -362,51 +380,143 @@ public class AddBooksToLibraryController implements Initializable {
         bookBox.setPadding(new Insets(10));
         bookBox.setStyle("-fx-background-color: white; -fx-border-color: #EEEEEE; -fx-border-radius: 5px;");
 
+        // Informazioni del libro in un contenitore
         VBox infoBox = new VBox(5);
         infoBox.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(infoBox, Priority.ALWAYS);
 
+        // Titolo del libro più grande e in evidenza
         Label titleLabel = new Label(book.getTitle());
         titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;");
         titleLabel.setWrapText(true);
-        titleLabel.setMaxWidth(480);
+        titleLabel.setMaxWidth(480); // Imposta una larghezza massima per evitare troncamenti
 
+        // Autore del libro
         Label authorLabel = new Label("Autore: " + book.getAuthors());
         authorLabel.setStyle("-fx-font-size: 14px;");
         authorLabel.setWrapText(true);
 
-        Label detailsLabel = new Label("Categoria: " + book.getCategory() + " | Editore: " + book.getPublisher() + " | Anno: " + book.getPublishYear());
+        // Dettagli del libro su una riga
+        Label detailsLabel = new Label(" Autore: " + book.getAuthors() + " | Anno: " + book.getPublishYear());
         detailsLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #777777;");
         detailsLabel.setWrapText(true);
 
+        // Aggiungi le etichette al contenitore delle informazioni
         infoBox.getChildren().addAll(titleLabel, authorLabel, detailsLabel);
 
+        // Creazione del pulsante con le stesse proprietà di consigli.fxml
         Button actionButton = new Button();
+
+        // CONFIGURAZIONE FISSA DEL PULSANTE - Garantisce sempre le stesse dimensioni
+        actionButton.setPrefHeight(40.0);
+        actionButton.setPrefWidth(100.0);
+        actionButton.setMinHeight(40.0);
+        actionButton.setMinWidth(100.0);
+        actionButton.setMaxHeight(40.0);   // Fissa l'altezza massima
+        actionButton.setMaxWidth(100.0);   // Fissa la larghezza massima
+
+        // Impedisce al pulsante di adattarsi al contenuto
+        HBox.setHgrow(actionButton, Priority.NEVER);
+
+        // Aggiungi l'effetto ombra
+        DropShadow shadow = new DropShadow();
+        shadow.setColor(Color.web("#00000080"));
+        shadow.setHeight(4.0);
+        shadow.setRadius(1.5);
+        shadow.setWidth(4.0);
+        actionButton.setEffect(shadow);
+
+        // Controlla se il libro è già selezionato
         boolean isSelected = selectedBooks.contains(book.getTitle());
 
         if (isSelected) {
+            // Il libro è già nella lista dei selezionati
             actionButton.setText("Rimuovi");
-            actionButton.setStyle("-fx-background-color: red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
+            actionButton.setStyle(
+                    "-fx-background-color: red; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-background-radius: 15; " +
+                            "-fx-padding: 10px 15px; " +
+                            "-fx-cursor: hand; " +
+                            "-fx-min-width: 100px; " +   // Garantisce una larghezza minima
+                            "-fx-min-height: 40px; " +   // Garantisce un'altezza minima
+                            "-fx-max-width: 100px; " +   // Limita la larghezza massima
+                            "-fx-max-height: 40px;"      // Limita l'altezza massima
+            );
         } else {
+            // Il libro non è ancora selezionato
             actionButton.setText("Aggiungi");
-            actionButton.setStyle("-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
+            actionButton.setStyle(
+                    "-fx-background-color: #75B965; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-background-radius: 15; " +
+                            "-fx-padding: 10px 15px; " +
+                            "-fx-cursor: hand; " +
+                            "-fx-min-width: 100px; " +   // Garantisce una larghezza minima
+                            "-fx-min-height: 40px; " +   // Garantisce un'altezza minima
+                            "-fx-max-width: 100px; " +   // Limita la larghezza massima
+                            "-fx-max-height: 40px;"      // Limita l'altezza massima
+            );
         }
 
+        // Crea un contenitore per il pulsante per garantire posizionamento e dimensioni fisse
+        HBox buttonContainer = new HBox();
+        buttonContainer.setAlignment(Pos.CENTER);
+        buttonContainer.setPrefWidth(100);   // Larghezza fissa per il contenitore
+        buttonContainer.setMinWidth(100);    // Larghezza minima fissa
+        buttonContainer.setMaxWidth(100);    // Larghezza massima fissa
+        buttonContainer.getChildren().add(actionButton);
+
+        // Imposta l'azione per il pulsante
         actionButton.setOnAction(e -> toggleBookSelection(book.getTitle(), actionButton));
 
-        bookBox.getChildren().addAll(infoBox, actionButton);
+        // Aggiungi gli elementi al box
+        bookBox.getChildren().addAll(infoBox, buttonContainer);
         return bookBox;
     }
 
+    /**
+     * Alterna lo stato di selezione di un libro.
+     * Se il libro è già selezionato lo rimuove, altrimenti lo aggiunge alla selezione.
+     * Aggiorna l'aspetto del pulsante in base allo stato corrente.
+     */
     private void toggleBookSelection(String bookTitle, Button button) {
         if (selectedBooks.contains(bookTitle)) {
             selectedBooks.remove(bookTitle);
             button.setText("Aggiungi");
-            button.setStyle("-fx-background-color: #75B965; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
+            button.setStyle(
+                    "-fx-background-color: #75B965; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-background-radius: 15; " +
+                            "-fx-padding: 10px 15px; " +
+                            "-fx-cursor: hand; " +
+                            "-fx-min-width: 100px; " +
+                            "-fx-min-height: 40px; " +
+                            "-fx-max-width: 100px; " +
+                            "-fx-max-height: 40px;"
+            );
         } else {
             selectedBooks.add(bookTitle);
             button.setText("Rimuovi");
-            button.setStyle("-fx-background-color: red; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand;");
+            button.setStyle(
+                    "-fx-background-color: red; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 14px; " +
+                            "-fx-font-weight: bold; " +
+                            "-fx-background-radius: 15; " +
+                            "-fx-padding: 10px 15px; " +
+                            "-fx-cursor: hand; " +
+                            "-fx-min-width: 100px; " +
+                            "-fx-min-height: 40px; " +
+                            "-fx-max-width: 100px; " +
+                            "-fx-max-height: 40px;"
+            );
         }
 
         updateSelectedBooksList();
@@ -415,6 +525,10 @@ public class AddBooksToLibraryController implements Initializable {
         errorLabel.setVisible(false);
     }
 
+    /**
+     * Aggiorna la lista dei libri selezionati nell'interfaccia.
+     * Ordina alfabeticamente i titoli dei libri per una migliore visualizzazione.
+     */
     private void updateSelectedBooksList() {
         selectedBooksListView.getItems().clear();
         List<String> sortedBooks = new ArrayList<>(selectedBooks);
@@ -422,10 +536,18 @@ public class AddBooksToLibraryController implements Initializable {
         selectedBooksListView.getItems().addAll(sortedBooks);
     }
 
+    /**
+     * Aggiorna il contatore del numero totale di libri selezionati.
+     */
     private void updateSelectedBooksCount() {
         selectedBooksCountLabel.setText("Libri totali: " + selectedBooks.size());
     }
 
+    /**
+     * Aggiorna l'interfaccia dei risultati di ricerca.
+     * Si assicura che i libri selezionati siano correttamente visualizzati come tali
+     * nei risultati di ricerca.
+     */
     private void updateSearchResults() {
         if (!searchResults.isEmpty()) {
             if (!titleResultsContainer.getChildren().isEmpty()) {
@@ -438,6 +560,11 @@ public class AddBooksToLibraryController implements Initializable {
         }
     }
 
+    /**
+     * Salva la libreria nel database.
+     * Crea la libreria se non esiste, altrimenti aggiorna i libri contenuti.
+     * Utilizza una transazione per garantire l'integrità dei dati.
+     */
     private void saveLibraryToDatabase() {
         try (Connection conn = dbManager.getConnection()) {
             conn.setAutoCommit(false);
@@ -458,12 +585,16 @@ public class AddBooksToLibraryController implements Initializable {
                 throw e;
             }
         } catch (SQLException e) {
-            System.err.println("Error saving library: " + e.getMessage());
             errorLabel.setText("Errore nel salvataggio della libreria: " + e.getMessage());
             errorLabel.setVisible(true);
         }
     }
 
+    /**
+     * Ottiene l'ID di una libreria esistente o ne crea una nuova.
+     * Cerca prima una libreria con il nome e ID utente specificati.
+     * Se non esiste, ne crea una nuova e restituisce il suo ID.
+     */
     private int getOrCreateLibrary(Connection conn, String userId, String libraryName) throws SQLException {
         // Check if a library exists
         String selectSql = "SELECT id FROM libraries WHERE user_id = ? AND library_name = ?";
@@ -491,6 +622,10 @@ public class AddBooksToLibraryController implements Initializable {
         }
     }
 
+    /**
+     * Rimuove tutti i libri esistenti da una libreria.
+     * Utilizzato prima di aggiungere i nuovi libri selezionati.
+     */
     private void clearLibraryBooks(Connection conn, int libraryId) throws SQLException {
         String sql = "DELETE FROM library_books WHERE library_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -499,6 +634,11 @@ public class AddBooksToLibraryController implements Initializable {
         }
     }
 
+    /**
+     * Aggiunge i libri selezionati alla libreria.
+     * Per ogni titolo di libro selezionato, cerca l'ID del libro nel database
+     * e lo associa alla libreria.
+     */
     private void addBooksToLibrary(Connection conn, int libraryId, Set<String> bookTitles) throws SQLException {
         String findBookSql = "SELECT id FROM books WHERE title = ?";
         String insertSql = "INSERT INTO library_books (library_id, book_id) VALUES (?, ?)";
@@ -520,16 +660,28 @@ public class AddBooksToLibraryController implements Initializable {
         }
     }
 
+    /**
+     * Gestisce l'evento di annullamento dell'operazione.
+     * Naviga al menu utente senza salvare le modifiche.
+     */
     @FXML
     public void handleCancel(ActionEvent event) {
         navigateToUserMenu(event);
     }
 
+    /**
+     * Gestisce l'evento di ritorno al menu precedente.
+     * Naviga al menu utente senza salvare le modifiche.
+     */
     @FXML
     public void handleBack(ActionEvent event) {
         navigateToUserMenu(event);
     }
 
+    /**
+     * Naviga al menu utente.
+     * Carica la vista userMenu.fxml e imposta i dati dell'utente.
+     */
     private void navigateToUserMenu(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/book_recommender/lab_b/userMenu.fxml"));
@@ -544,7 +696,6 @@ public class AddBooksToLibraryController implements Initializable {
             stage.show();
 
         } catch (IOException e) {
-            System.err.println("Errore nel caricamento del menu utente: " + e.getMessage());
             errorLabel.setText("Errore: " + e.getMessage());
             errorLabel.setVisible(true);
         }
